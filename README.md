@@ -20,6 +20,9 @@ node server/server.js   →   http://localhost:8080/        (the display / kiosk
 - **Family calendar** — members, events, yearly repeats, week strip + agenda.
 - **Daily hadith** (Bangla + cited source) from `data/hadith.json`.
 - **Ramadan mode** (Suhoor/Iftar countdown) + special-day banners (Eid, Ashura…).
+- **Animated sky background** that tracks the weather + time of day — sun/moon
+  arcing overhead, stars, drifting clouds, rain, snow, and storm lightning
+  (canvas; respects reduced-motion and pauses when hidden).
 - **4 themes** (Midnight/Daylight/Focus/Warm), font scaling, dimming + auto
   night-dim, keep-awake, instant sync (SSE), backup/restore, on-screen LAN URL.
 

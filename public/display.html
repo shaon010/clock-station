@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/css/base.css">
 </head>
 <body>
+<canvas id="sky"></canvas>
 <div id="dim-overlay"></div>
 
 <div id="sound-arm">
@@ -68,6 +69,19 @@
 
     <!-- RIGHT -->
     <div class="col">
+      <div class="card wx-hero">
+        <h2 class="section-title">Weather</h2>
+        <div class="wx-main">
+          <div class="wx-icon" id="wx-icon">—</div>
+          <div class="wx-readout">
+            <div class="wx-temp tnum" id="wx-temp">--°</div>
+            <div class="wx-cond" id="wx-cond">Loading…</div>
+            <div class="wx-sub" id="wx-place"></div>
+          </div>
+        </div>
+        <div class="wx-stats" id="wx-stats"></div>
+      </div>
+
       <div class="card hide-on-focus">
         <h2 class="section-title">This week</h2>
         <div class="week-strip" id="week"></div>
@@ -80,18 +94,6 @@
         <div class="hadith-chapter" id="hadith-chapter"></div>
         <div class="hadith-text" id="hadith-text">—</div>
         <div class="hadith-src" id="hadith-src"></div>
-      </div>
-
-      <div class="card">
-        <h2 class="section-title">Weather</h2>
-        <div class="wx-main">
-          <div class="wx-temp tnum" id="wx-temp">--°</div>
-          <div>
-            <div class="wx-cond" id="wx-cond">Loading…</div>
-            <div class="wx-sub" id="wx-place"></div>
-          </div>
-        </div>
-        <div class="wx-stats" id="wx-stats"></div>
       </div>
     </div>
   </div>
@@ -106,6 +108,7 @@
 <audio id="audio-adhan" preload="auto"></audio>
 <audio id="audio-iqamah" preload="auto"></audio>
 
+<script src="/js/sky.js"></script>
 <script src="/js/display.js"></script>
 </body>
 </html>

@@ -16,6 +16,7 @@ let wakeLock = null;
 // ---------- boot ----------
 init();
 async function init() {
+  window.Sky?.init($('sky'));   // animated weather/day-night background
   await refreshConfig();
   await Promise.all([refreshPrayer(), refreshWeather(), refreshHadith(), loadNetInfo()]);
   initDeviceLocation();   // async: switches to device location once permitted
@@ -241,14 +242,17 @@ function armSound() {
 // ---------- weather ----------
 async function refreshWeather() {
   const w = await fetchJSON('/api/weather' + locQS());
-  if (!w || w.unavailable) { $('wx-cond').textContent = 'Unavailable'; return; }
+  if (!w || w.unavailable) { $('wx-cond').textContent = 'Unavailable'; window.Sky?.set({ code: 0 }); return; }
   $('stale').hidden = !w.stale;
+  // drive the animated background from the live condition + sunrise/sunset
+  window.Sky?.set({ code: w.code, isDay: w.isDay, sunrise: w.sunrise, sunset: w.sunset });
   const f = (cfg.units?.temp || 'c') === 'f';
   const conv = (c) => Math.round(f ? c * 9 / 5 + 32 : c);
   const unit = f ? '°F' : '°C';
   const meta = wmo(w.code, w.isDay);
+  $('wx-icon').textContent = meta.icon;
   $('wx-temp').textContent = conv(w.tempC) + '°';
-  $('wx-cond').textContent = `${meta.icon} ${meta.text}`;
+  $('wx-cond').textContent = meta.text;
   $('wx-place').textContent = w.place || '';
   const stats = [];
   if (w.feelsC != null) stats.push(`Feels <b>${conv(w.feelsC)}${unit}</b>`);
