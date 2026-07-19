@@ -1,0 +1,88 @@
+/* themes.css — every theme is a set of CSS variables. Fonts use OS-provided
+   families (Segoe UI, Consolas, Nirmala UI for Bengali, Constantia serif) so the
+   appliance looks right offline on Windows with nothing to download. */
+
+:root {
+  /* shared font stacks */
+  --font-body: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Consolas", "Cascadia Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-bengali: "Nirmala UI", "Noto Sans Bengali", "Kalpurush", var(--font-body);
+
+  --radius: 20px;
+  --display-weight: 600;
+  --card-blur: blur(12px);
+
+  /* ---- Midnight (default) ---- */
+  --bg: #0d1117;
+  --bg-glow: radial-gradient(ellipse at 18% -5%, rgba(76,166,166,0.10), transparent 55%),
+             radial-gradient(ellipse at 95% 105%, rgba(76,166,166,0.06), transparent 55%);
+  --surface: rgba(255,255,255,0.045);
+  --surface-2: rgba(255,255,255,0.025);
+  --border: rgba(255,255,255,0.085);
+  --track: rgba(255,255,255,0.12);
+  --text: #e8edf2;
+  --text-dim: #8b95a6;
+  --accent: #4CA6A6;
+  --accent-soft: rgba(76,166,166,0.14);
+  --accent-border: rgba(76,166,166,0.35);
+  --warn: #d99a5b;
+}
+
+/* ---- Daylight: clean, light, airy ---- */
+:root[data-theme="daylight"] {
+  --bg: #f4f5f7;
+  --bg-glow: radial-gradient(ellipse at 85% -5%, rgba(47,125,187,0.10), transparent 55%);
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --border: rgba(20,30,50,0.09);
+  --track: rgba(20,30,50,0.10);
+  --text: #17202e;
+  --text-dim: #66718a;
+  --accent: #2f7dbb;
+  --accent-soft: rgba(47,125,187,0.10);
+  --accent-border: rgba(47,125,187,0.28);
+  --warn: #b5701f;
+  --card-blur: none;
+}
+
+/* ---- Focus: near-black, huge clock, secondary cards hidden ---- */
+:root[data-theme="focus"] {
+  --bg: #08090c;
+  --bg-glow: radial-gradient(ellipse at 50% -10%, rgba(224,164,88,0.09), transparent 55%);
+  --surface: rgba(255,255,255,0.03);
+  --surface-2: rgba(255,255,255,0.02);
+  --border: rgba(255,255,255,0.06);
+  --track: rgba(255,255,255,0.10);
+  --text: #f2ede4;
+  --text-dim: #8a857c;
+  --accent: #E0A458;
+  --accent-soft: rgba(224,164,88,0.13);
+  --accent-border: rgba(224,164,88,0.32);
+  --warn: #d98b5b;
+}
+:root[data-theme="focus"] .clock { font-size: clamp(5rem, 12vw, 10rem); }
+:root[data-theme="focus"] .np-name { font-size: 2.1rem; }
+:root[data-theme="focus"] .hide-on-focus { display: none !important; }
+:root[data-theme="focus"] .grid { grid-template-columns: 1.4fr 0.6fr; }
+
+/* ---- Warm: the original gold + serif look ---- */
+:root[data-theme="warm"] {
+  --bg: #0B1220;
+  --bg-glow: radial-gradient(ellipse at 20% 0%, rgba(212,175,55,0.10), transparent 55%),
+             radial-gradient(ellipse at 90% 100%, rgba(63,167,150,0.10), transparent 55%);
+  --surface: rgba(255,255,255,0.045);
+  --surface-2: rgba(255,255,255,0.03);
+  --border: rgba(255,255,255,0.09);
+  --track: rgba(255,255,255,0.12);
+  --text: #F3EFE6;
+  --text-dim: #8B93A7;
+  --accent: #D4AF37;
+  --accent-soft: rgba(212,175,55,0.16);
+  --accent-border: rgba(212,175,55,0.35);
+  --warn: #d99a5b;
+  --font-display: "Constantia", "Georgia", "Times New Roman", serif;
+  --display-weight: 500;
+}
+
+::selection { background: var(--accent); color: var(--bg); }

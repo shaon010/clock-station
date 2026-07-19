@@ -1,0 +1,162 @@
+/* base.css — layout + components. All colors/fonts come from CSS variables that
+   themes.css sets per [data-theme]. Font sizes use rem so the whole UI scales
+   with the "read from across the room" font-scale setting (html font-size). */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }               /* JS multiplies this by fontScale */
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+  background-image: var(--bg-glow);
+  /* Kiosk: the whole dock is scaled to fit one screen (see fitToScreen in
+     display.js), so we center it and never scroll. */
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 1.5s ease;
+}
+
+/* number rendering */
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* ---------- layout ---------- */
+/* Fills the full viewport width; fitToScreen() scales the root font-size so the
+   height fits the screen without scrolling, keeping every widget edge-to-edge. */
+.app { width: 100%; max-width: 1500px; padding: 2rem 2.25rem 3rem; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; margin-bottom: 1.25rem;
+}
+.eyebrow {
+  font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--accent); opacity: 0.9;
+}
+.stale-hint { color: var(--warn); font-size: 0.7rem; letter-spacing: 0.06em; }
+
+.grid {
+  display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 1.5rem;
+}
+.col { display: flex; flex-direction: column; gap: 1.5rem; }
+@media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.6rem 1.75rem;
+  backdrop-filter: var(--card-blur);
+}
+.section-title {
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--text-dim); margin-bottom: 1rem;
+}
+
+/* ---------- clock hero ---------- */
+.hero { padding: 2rem 1.9rem; }
+.clock {
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-size: clamp(4rem, 9vw, 7.5rem); line-height: 1; letter-spacing: -0.01em;
+}
+.clock .ampm {
+  font-size: 0.3em; margin-left: 0.4rem; color: var(--text-dim);
+  font-family: var(--font-body); font-weight: 600;
+}
+.datebar { display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem; align-items: baseline; margin-top: 0.9rem; }
+.datebar .greg { font-size: 1.15rem; }
+.datebar .hijri { font-size: 0.95rem; color: var(--accent); font-family: var(--font-mono); }
+
+/* next prayer strip */
+.next-prayer {
+  margin-top: 1.6rem; display: flex; align-items: center; gap: 1.2rem;
+  background: var(--accent-soft); border: 1px solid var(--accent-border);
+  border-radius: calc(var(--radius) - 6px); padding: 1.1rem 1.3rem;
+}
+.arc-wrap { position: relative; width: 4.6rem; height: 4.6rem; flex: none; }
+.arc-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+.arc-track { fill: none; stroke: var(--track); stroke-width: 6; }
+.arc-fill { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+.arc-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-family: var(--font-mono); color: var(--accent); }
+.np-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); font-family: var(--font-mono); }
+.np-name { font-family: var(--font-display); font-size: 1.6rem; margin-top: 0.15rem; }
+.np-in { font-size: 0.9rem; color: var(--accent); margin-top: 0.15rem; }
+
+/* ---------- prayer list ---------- */
+.prayer-list { list-style: none; }
+.prayer-head, .prayer-list li {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 1.2rem; align-items: center;
+  padding: 0.7rem 0.25rem; border-bottom: 1px solid var(--border);
+}
+.prayer-head { border-bottom: 1px solid var(--border); }
+.prayer-head span { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+.prayer-list li:last-child { border-bottom: none; }
+.prayer-list li.active { color: var(--accent); font-weight: 600; }
+.prayer-list li.active .pname::before { content: "● "; font-size: 0.6em; position: relative; top: -0.15em; }
+.prayer-list .ptime, .prayer-list .iqtime { font-family: var(--font-mono); text-align: right; }
+.prayer-list .iqtime { color: var(--text-dim); font-size: 0.9rem; }
+.head-iqamah, .iqtime { min-width: 4rem; }
+
+/* ---------- weather ---------- */
+.wx-main { display: flex; align-items: center; gap: 1.2rem; }
+.wx-temp { font-family: var(--font-display); font-size: 3.2rem; line-height: 1; }
+.wx-cond { color: var(--text); font-size: 1rem; }
+.wx-sub { color: var(--text-dim); font-size: 0.8rem; margin-top: 0.2rem; }
+.wx-stats { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin-top: 1rem; }
+.wx-stat { font-size: 0.85rem; color: var(--text-dim); }
+.wx-stat b { color: var(--text); font-weight: 600; font-family: var(--font-mono); }
+
+/* ---------- calendar ---------- */
+.week-strip { display: flex; gap: 0.5rem; margin-bottom: 1.1rem; }
+.day-chip { flex: 1; text-align: center; padding: 0.6rem 0.25rem; border-radius: 0.75rem; background: var(--surface-2); border: 1px solid var(--border); }
+.day-chip.today { background: var(--accent-soft); border-color: var(--accent-border); }
+.day-chip .dow { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+.day-chip .dnum { font-family: var(--font-display); font-size: 1.2rem; margin-top: 0.15rem; }
+.day-chip .dmark { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin: 0.3rem auto 0; }
+.day-chip .dmark.hide { visibility: hidden; }
+.agenda-item { display: flex; gap: 0.9rem; align-items: flex-start; padding: 0.75rem 0.25rem; border-bottom: 1px solid var(--border); }
+.agenda-item:last-child { border-bottom: none; }
+.dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 0.4rem; flex: none; }
+.agenda-when { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-dim); min-width: 4.2rem; }
+.agenda-title { font-size: 0.95rem; }
+.agenda-who { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.1rem; }
+.empty { color: var(--text-dim); font-size: 0.85rem; padding: 0.4rem 0.25rem; }
+
+/* ---------- hadith ---------- */
+.hadith-card .hadith-text {
+  font-family: var(--font-bengali); font-size: 1.15rem; line-height: 1.9; color: var(--text);
+}
+.hadith-src { margin-top: 0.9rem; font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono); }
+.hadith-chapter { font-family: var(--font-bengali); color: var(--accent); }
+
+/* ---------- ramadan / special banner ---------- */
+.banner {
+  display: none; align-items: center; gap: 1.2rem; margin-bottom: 1.25rem;
+  background: var(--accent-soft); border: 1px solid var(--accent-border);
+  border-radius: var(--radius); padding: 1rem 1.4rem;
+}
+.banner.show { display: flex; }
+.banner .b-title { font-family: var(--font-display); font-size: 1.2rem; }
+.banner .b-count { margin-left: auto; font-family: var(--font-mono); color: var(--accent); font-size: 1rem; }
+
+/* ---------- footer: QR + settings hint ---------- */
+.footer { display: flex; align-items: center; gap: 1rem; margin-top: 1.75rem; color: var(--text-dim); font-size: 0.75rem; }
+.footer .qr { background: #fff; padding: 5px; border-radius: 8px; line-height: 0; }
+.footer code { font-family: var(--font-mono); color: var(--text); }
+
+/* ---------- overlays ---------- */
+#dim-overlay { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 60; transition: opacity 1s ease; }
+#sound-arm {
+  position: fixed; inset: 0; z-index: 80; display: none;
+  align-items: center; justify-content: center; flex-direction: column; gap: 1rem;
+  background: rgba(0,0,0,0.72); backdrop-filter: blur(4px); color: var(--text); text-align: center; cursor: pointer;
+}
+#sound-arm.show { display: flex; }
+#sound-arm .sa-btn { border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 0.8rem 1.6rem; font-size: 1rem; }
+
+/* focus theme hides the busier cards to stay glanceable — handled in themes.css */

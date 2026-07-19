@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Home — Family Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,450;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold:#D4AF37;
+    --gold-soft:rgba(212,175,55,0.16);
+    --teal:#3FA796;
+    --blue:#5B8DBE;
+    --plum:#B06A8F;
+    --text:#F3EFE6;
+    --text-dim:#8B93A7;
+    --card:rgba(255,255,255,0.045);
+    --card-border:rgba(255,255,255,0.09);
+    --radius:20px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',sans-serif;
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+    background:#0B1220;
+    background-image:radial-gradient(ellipse at 20% 0%, rgba(212,175,55,0.10), transparent 55%),
+                      radial-gradient(ellipse at 90% 100%, rgba(63,167,150,0.10), transparent 55%);
+    transition:background-color 3s ease;
+    position:relative;
+  }
+  #sky{position:fixed; inset:0; z-index:-1; transition:opacity 3s ease; opacity:0.55;}
+
+  .wrap{max-width:1400px; margin:0 auto; padding:36px 40px 90px;}
+
+  /* header */
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--gold);
+    opacity:0.85;
+    margin-bottom:4px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1.15fr 0.85fr;
+    gap:28px;
+    margin-top:22px;
+  }
+  @media (max-width:980px){ .grid{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:var(--radius);
+    padding:28px 30px;
+    backdrop-filter:blur(14px);
+  }
+
+  /* clock hero */
+  .hero{padding:34px 36px 30px;}
+  .clock{
+    font-family:'Fraunces',serif;
+    font-weight:450;
+    font-variant-numeric:tabular-nums;
+    font-size:clamp(64px,9vw,118px);
+    line-height:1;
+    letter-spacing:-0.01em;
+  }
+  .clock sup{font-size:0.32em; margin-left:8px; color:var(--text-dim); font-family:'Inter',sans-serif; font-weight:600;}
+  .datebar{
+    display:flex; flex-wrap:wrap; gap:10px 22px; align-items:baseline; margin-top:14px;
+  }
+  .datebar .greg{font-size:19px; color:var(--text);}
+  .datebar .hijri{font-size:15px; color:var(--gold); font-family:'IBM Plex Mono',monospace;}
+
+  /* next prayer strip */
+  .next-prayer{
+    margin-top:26px;
+    display:flex; align-items:center; gap:20px;
+    background:var(--gold-soft);
+    border:1px solid rgba(212,175,55,0.35);
+    border-radius:16px;
+    padding:18px 22px;
+  }
+  .arc-wrap{position:relative; width:74px; height:74px; flex:none;}
+  .arc-wrap svg{transform:rotate(-90deg);}
+  .arc-track{fill:none; stroke:rgba(255,255,255,0.12); stroke-width:6;}
+  .arc-fill{fill:none; stroke:var(--gold); stroke-width:6; stroke-linecap:round; transition:stroke-dashoffset 1s linear;}
+  .arc-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--gold);}
+  .np-text .np-label{font-size:12px; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-dim); font-family:'IBM Plex Mono',monospace;}
+  .np-text .np-name{font-family:'Fraunces',serif; font-size:26px; margin-top:2px;}
+  .np-text .np-in{font-size:14px; color:var(--gold); margin-top:2px;}
+
+  /* prayer list */
+  h2.section-title{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--text-dim); margin-bottom:16px;
+  }
+  .prayer-list{list-style:none; display:flex; flex-direction:column; gap:2px;}
+  .prayer-list li{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:11px 4px; border-bottom:1px solid rgba(255,255,255,0.06);
+    font-size:16px;
+  }
+  .prayer-list li:last-child{border-bottom:none;}
+  .prayer-list li.active{color:var(--gold); font-weight:600;}
+  .prayer-list li.active .pname::before{content:"● "; font-size:9px; position:relative; top:-2px;}
+  .prayer-list .ptime{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums;}
+
+  /* weather */
+  .weather-row{display:flex; align-items:center; gap:18px;}
+  .wx-temp{font-family:'Fraunces',serif; font-size:52px;}
+  .wx-meta{color:var(--text-dim); font-size:14px; line-height:1.5;}
+  .wx-place{font-size:14px; color:var(--text-dim); margin-top:14px;}
+
+  /* agenda */
+  .agenda-item{
+    display:flex; gap:14px; align-items:flex-start;
+    padding:12px 4px; border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .agenda-item:last-child{border-bottom:none;}
+  .dot{width:9px; height:9px; border-radius:50%; margin-top:6px; flex:none;}
+  .agenda-when{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-dim); min-width:64px;}
+  .agenda-title{font-size:15px;}
+  .agenda-who{font-size:12px; color:var(--text-dim); margin-top:2px;}
+  .empty{color:var(--text-dim); font-size:14px; padding:6px 4px;}
+
+  /* week strip */
+  .week-strip{display:flex; gap:8px; margin-bottom:18px;}
+  .day-chip{
+    flex:1; text-align:center; padding:10px 4px; border-radius:12px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+  }
+  .day-chip.today{background:var(--gold-soft); border-color:rgba(212,175,55,0.4);}
+  .day-chip .dow{font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-dim);}
+  .day-chip .dnum{font-family:'Fraunces',serif; font-size:19px; margin-top:2px;}
+  .day-chip .dmark{width:5px; height:5px; border-radius:50%; background:var(--teal); margin:5px auto 0;}
+  .day-chip .dmark.hide{visibility:hidden;}
+
+  /* gear */
+  #gear{
+    position:fixed; bottom:22px; right:24px; z-index:50;
+    width:44px; height:44px; border-radius:50%;
+    background:rgba(255,255,255,0.07); border:1px solid var(--card-border);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    color:var(--text-dim); backdrop-filter:blur(8px);
+  }
+  #gear:hover{color:var(--gold); border-color:var(--gold);}
+
+  /* config overlay */
+  #overlay{
+    position:fixed; inset:0; z-index:100; background:rgba(6,9,16,0.86);
+    backdrop-filter:blur(6px); display:none; overflow-y:auto;
+  }
+  #overlay.open{display:block;}
+  .panel{max-width:640px; margin:40px auto 60px; padding:0 20px 40px;}
+  .panel h1{font-family:'Fraunces',serif; font-size:30px; margin-bottom:4px;}
+  .panel .sub{color:var(--text-dim); font-size:14px; margin-bottom:26px;}
+  .field-group{margin-bottom:26px;}
+  .field-group label{display:block; font-size:12px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; margin-bottom:8px;}
+  input[type=text], input[type=date], input[type=time], select{
+    width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--card-border);
+    background:rgba(255,255,255,0.05); color:var(--text); font-size:15px; font-family:'Inter',sans-serif;
+  }
+  input:focus, select:focus{outline:none; border-color:var(--gold);}
+  .row2{display:flex; gap:12px;}
+  .row2 > *{flex:1;}
+  button{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:14px;
+    border:none; border-radius:10px; padding:12px 18px; cursor:pointer;
+  }
+  .btn-primary{background:var(--gold); color:#1a1305;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:rgba(255,255,255,0.06); color:var(--text); border:1px solid var(--card-border);}
+  .btn-ghost:hover{border-color:var(--gold); color:var(--gold);}
+  .btn-danger{background:rgba(217,80,80,0.14); color:#e78888; padding:8px 12px; font-size:12px;}
+  .list-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 4px; border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .list-row:last-child{border-bottom:none;}
+  .chip{display:flex; align-items:center; gap:8px; font-size:14px;}
+  .swatch{width:12px; height:12px; border-radius:50%;}
+  .member-tag{
+    display:inline-flex; align-items:center; gap:6px; padding:6px 10px;
+    border-radius:20px; background:rgba(255,255,255,0.05); border:1px solid var(--card-border);
+    font-size:13px; margin:4px 6px 0 0;
+  }
+  .close-x{position:sticky; top:16px; float:right; background:rgba(255,255,255,0.06); border:1px solid var(--card-border); border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-dim); margin-right:4px;}
+  .close-x:hover{color:var(--gold); border-color:var(--gold);}
+  .save-toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--gold); color:#1a1305; padding:10px 20px; border-radius:30px;
+    font-size:13px; font-weight:600; opacity:0; transition:all .35s ease; z-index:200;
+  }
+  .save-toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  ::selection{background:var(--gold); color:#1a1305;}
+</style>
+</head>
+<body>
+<div id="sky"></div>
+
+<div class="wrap">
+  <div class="eyebrow" id="loc-eyebrow">Home</div>
+
+  <div class="grid">
+    <!-- LEFT: clock + prayer -->
+    <div>
+      <div class="card hero">
+        <div class="clock" id="clock">--:--<sup id="ampm"></sup></div>
+        <div class="datebar">
+          <div class="greg" id="greg-date">—</div>
+          <div class="hijri" id="hijri-date">—</div>
+        </div>
+
+        <div class="next-prayer">
+          <div class="arc-wrap">
+            <svg width="74" height="74" viewBox="0 0 74 74">
+              <circle class="arc-track" cx="37" cy="37" r="30"></circle>
+              <circle class="arc-fill" id="arc-fill" cx="37" cy="37" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"></circle>
+            </svg>
+            <div class="arc-label" id="arc-pct">--</div>
+          </div>
+          <div class="np-text">
+            <div class="np-label">Next prayer</div>
+            <div class="np-name" id="np-name">—</div>
+            <div class="np-in" id="np-in">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:22px;">
+        <h2 class="section-title">Today's prayers</h2>
+        <ul class="prayer-list" id="prayer-list"></ul>
+      </div>
+    </div>
+
+    <!-- RIGHT: weather + calendar -->
+    <div>
+      <div class="card">
+        <h2 class="section-title">Weather</h2>
+        <div class="weather-row">
+          <div class="wx-temp" id="wx-temp">--°</div>
+          <div class="wx-meta" id="wx-meta">Loading…</div>
+        </div>
+        <div class="wx-place" id="wx-place"></div>
+      </div>
+
+      <div class="card" style="margin-top:22px;">
+        <h2 class="section-title">This week</h2>
+        <div class="week-strip" id="week-strip"></div>
+        <h2 class="section-title">Upcoming</h2>
+        <div id="agenda"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="gear" title="Settings">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <circle cx="12" cy="12" r="3"></circle>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+  </svg>
+</div>
+
+<!-- CONFIG OVERLAY -->
+<div id="overlay">
+  <div class="panel">
+    <div class="close-x" id="close-overlay">✕</div>
+    <h1>Dashboard settings</h1>
+    <div class="sub">Changes sync to the display within 30 seconds.</div>
+
+    <div class="field-group">
+      <label>Location (for weather &amp; prayer times)</label>
+      <div class="row2">
+        <input type="text" id="loc-input" placeholder="e.g. Iwaki, Japan or Dhaka, Bangladesh">
+        <button class="btn-primary" id="loc-save" style="flex:none;">Set</button>
+      </div>
+      <div class="sub" id="loc-current" style="margin-top:8px; margin-bottom:0;"></div>
+    </div>
+
+    <div class="field-group">
+      <label>Family members</label>
+      <div class="row2">
+        <input type="text" id="member-name" placeholder="Name">
+        <input type="text" id="member-color" style="max-width:60px; padding:6px; height:44px;" value="#3FA796" type="color">
+        <button class="btn-ghost" id="member-add" style="flex:none;">Add</button>
+      </div>
+      <div id="member-list" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="field-group">
+      <label>Add event</label>
+      <input type="text" id="ev-title" placeholder="Event title" style="margin-bottom:10px;">
+      <div class="row2" style="margin-bottom:10px;">
+        <input type="date" id="ev-date">
+        <input type="time" id="ev-time">
+      </div>
+      <div class="row2" style="margin-bottom:10px;">
+        <select id="ev-member"><option value="">Everyone</option></select>
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px; text-transform:none; letter-spacing:0; color:var(--text); flex:none;">
+          <input type="checkbox" id="ev-yearly" style="width:auto;"> Repeats yearly
+        </label>
+      </div>
+      <button class="btn-primary" id="ev-add">Add event</button>
+    </div>
+
+    <div class="field-group">
+      <label>All events</label>
+      <div id="event-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="save-toast" id="toast">Saved</div>
+
+<script>
+const STORE_KEY = "family-dashboard-data";
+const DEFAULT_DATA = {
+  location: { name: "Iwaki, Fukushima, Japan", lat: 37.0500, lon: 140.8874 },
+  members: [
+    { name: "Everyone", color: "#D4AF37" }
+  ],
+  events: []
+};
+
+let data = null;
+
+// ---------- storage ----------
+async function loadData(){
+  try{
+    const res = await window.storage.get(STORE_KEY, true);
+    data = res && res.value ? JSON.parse(res.value) : structuredClone(DEFAULT_DATA);
+  }catch(e){
+    data = structuredClone(DEFAULT_DATA);
+  }
+  if(!data.location) data.location = DEFAULT_DATA.location;
+  if(!data.members || !data.members.length) data.members = structuredClone(DEFAULT_DATA.members);
+  if(!data.events) data.events = [];
+}
+async function saveData(){
+  try{
+    await window.storage.set(STORE_KEY, JSON.stringify(data), true);
+    showToast();
+  }catch(e){ console.error("save failed", e); }
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg || "Saved";
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+// ---------- clock ----------
+function tickClock(){
+  const now = new Date();
+  let h = now.getHours();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if(h === 0) h = 12;
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('clock').innerHTML = `${h}:${m}<sup id="ampm">${ampm}</sup>`;
+  document.getElementById('greg-date').textContent = now.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+
+// ---------- weather ----------
+const WMO = {
+  0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",
+  45:"Fog",48:"Fog",51:"Light drizzle",53:"Drizzle",55:"Drizzle",
+  61:"Light rain",63:"Rain",65:"Heavy rain",71:"Light snow",73:"Snow",75:"Heavy snow",
+  80:"Rain showers",81:"Rain showers",82:"Violent showers",
+  95:"Thunderstorm",96:"Thunderstorm",99:"Thunderstorm"
+};
+async function loadWeather(){
+  try{
+    const {lat, lon, name} = data.location;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=auto`;
+    const r = await fetch(url);
+    const j = await r.json();
+    const c = j.current;
+    document.getElementById('wx-temp').textContent = Math.round(c.temperature_2m) + '°C';
+    document.getElementById('wx-meta').innerHTML = `${WMO[c.weather_code] || 'Weather'}<br>Humidity ${c.relative_humidity_2m}%`;
+    document.getElementById('wx-place').textContent = name;
+  }catch(e){
+    document.getElementById('wx-meta').textContent = 'Unavailable';
+  }
+}
+
+// ---------- prayer times ----------
+let timingsCache = null;
+function fmtTime12(t){
+  const [hh, mm] = t.split(':').map(Number);
+  let h = hh % 12; if(h===0) h = 12;
+  return `${h}:${String(mm).padStart(2,'0')} ${hh>=12?'PM':'AM'}`;
+}
+function toMinutes(t){
+  const [hh,mm] = t.split(':').map(Number);
+  return hh*60+mm;
+}
+async function loadPrayerTimes(){
+  try{
+    const {lat, lon} = data.location;
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2,'0');
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const yyyy = today.getFullYear();
+    const url = `https://api.aladhan.com/v1/timings/${dd}-${mm}-${yyyy}?latitude=${lat}&longitude=${lon}&method=2`;
+    const r = await fetch(url);
+    const j = await r.json();
+    timingsCache = j.data;
+    renderPrayerList();
+    updateNextPrayer();
+
+    const h = j.data.date.hijri;
+    document.getElementById('hijri-date').textContent = `${h.day} ${h.month.en} ${h.year} AH`;
+  }catch(e){
+    document.getElementById('prayer-list').innerHTML = '<li class="empty">Prayer times unavailable</li>';
+  }
+}
+function renderPrayerList(){
+  if(!timingsCache) return;
+  const order = ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
+  const t = timingsCache.timings;
+  const list = document.getElementById('prayer-list');
+  list.innerHTML = order.map(name => {
+    return `<li data-name="${name}"><span class="pname">${name}</span><span class="ptime">${fmtTime12(t[name].split(' ')[0])}</span></li>`;
+  }).join('');
+}
+function updateNextPrayer(){
+  if(!timingsCache) return;
+  const prayerOrder = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
+  const t = timingsCache.timings;
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
+
+  const times = prayerOrder.map(name => ({ name, min: toMinutes(t[name].split(' ')[0]) }));
+  let next = times.find(p => p.min > nowMin);
+  let prevMin;
+  if(!next){
+    next = { name: times[0].name, min: times[0].min + 1440 };
+    prevMin = times[times.length-1].min;
+  } else {
+    const idx = times.findIndex(p => p.name === next.name);
+    prevMin = idx === 0 ? times[times.length-1].min - 1440 : times[idx-1].min;
+  }
+
+  const remain = next.min - nowMin;
+  const hrs = Math.floor(remain/60);
+  const mins = Math.floor(remain%60);
+  document.getElementById('np-name').textContent = next.name;
+  document.getElementById('np-in').textContent = hrs > 0 ? `in ${hrs}h ${mins}m` : `in ${mins}m`;
+
+  const span = next.min - prevMin;
+  const elapsed = nowMin - prevMin;
+  const pct = Math.max(0, Math.min(1, elapsed/span));
+  const circumference = 188.5;
+  document.getElementById('arc-fill').style.strokeDashoffset = circumference * (1-pct);
+  document.getElementById('arc-pct').textContent = Math.round(pct*100)+'%';
+
+  document.querySelectorAll('#prayer-list li').forEach(li=>{
+    li.classList.toggle('active', li.dataset.name === next.name);
+  });
+
+  updateSky(nowMin, t);
+}
+function updateSky(nowMin, t){
+  const fajr = toMinutes(t.Fajr.split(' ')[0]);
+  const sunrise = toMinutes(t.Sunrise.split(' ')[0]);
+  const dhuhr = toMinutes(t.Dhuhr.split(' ')[0]);
+  const maghrib = toMinutes(t.Maghrib.split(' ')[0]);
+  const isha = toMinutes(t.Isha.split(' ')[0]);
+  let grad;
+  if(nowMin < fajr || nowMin >= isha){
+    grad = 'radial-gradient(ellipse at 50% 0%, rgba(60,50,110,0.25), transparent 60%)';
+    document.body.style.backgroundColor = '#080B14';
+  } else if(nowMin < sunrise){
+    grad = 'radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.18), transparent 60%)';
+    document.body.style.backgroundColor = '#0B1220';
+  } else if(nowMin < maghrib - 60){
+    grad = 'radial-gradient(ellipse at 30% 0%, rgba(91,141,190,0.16), transparent 60%)';
+    document.body.style.backgroundColor = '#0E1626';
+  } else {
+    grad = 'radial-gradient(ellipse at 70% 10%, rgba(217,120,90,0.20), transparent 60%)';
+    document.body.style.backgroundColor = '#12101C';
+  }
+  document.getElementById('sky').style.background = grad;
+}
+
+// ---------- calendar / agenda ----------
+function memberColor(name){
+  const m = data.members.find(x => x.name === name);
+  return m ? m.color : '#D4AF37';
+}
+function eventOccursOn(ev, dateStr){
+  if(ev.date === dateStr) return true;
+  if(ev.repeatYearly){
+    const [y,m,d] = ev.date.split('-');
+    const [ty] = dateStr.split('-');
+    return `${ty}-${m}-${d}` === dateStr;
+  }
+  return false;
+}
+function renderWeekStrip(){
+  const strip = document.getElementById('week-strip');
+  const today = new Date();
+  const dow = ['S','M','T','W','T','F','S'];
+  let html = '';
+  for(let i=-today.getDay(); i<7-today.getDay(); i++){
+    const d = new Date(today); d.setDate(today.getDate()+i);
+    const ds = d.toISOString().slice(0,10);
+    const has = data.events.some(ev => eventOccursOn(ev, ds));
+    const isToday = ds === today.toISOString().slice(0,10);
+    html += `<div class="day-chip ${isToday?'today':''}">
+      <div class="dow">${dow[d.getDay()]}</div>
+      <div class="dnum">${d.getDate()}</div>
+      <div class="dmark ${has?'':'hide'}"></div>
+    </div>`;
+  }
+  strip.innerHTML = html;
+}
+function renderAgenda(){
+  const el = document.getElementById('agenda');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const upcoming = [];
+  for(let i=0;i<60;i++){
+    const d = new Date(today); d.setDate(today.getDate()+i);
+    const ds = d.toISOString().slice(0,10);
+    data.events.filter(ev => eventOccursOn(ev, ds)).forEach(ev => {
+      upcoming.push({ ...ev, occursOn: ds, sortDate: d });
+    });
+  }
+  upcoming.sort((a,b)=> a.sortDate - b.sortDate);
+  const top = upcoming.slice(0,6);
+  if(!top.length){
+    el.innerHTML = '<div class="empty">No upcoming events. Add one from settings.</div>';
+    return;
+  }
+  el.innerHTML = top.map(ev => {
+    const d = ev.sortDate;
+    const isToday = d.toDateString() === today.toDateString();
+    const isTomorrow = (()=>{ const t=new Date(today); t.setDate(t.getDate()+1); return d.toDateString()===t.toDateString(); })();
+    const when = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : d.toLocaleDateString(undefined,{month:'short', day:'numeric'});
+    return `<div class="agenda-item">
+      <div class="dot" style="background:${memberColor(ev.memberName)}"></div>
+      <div class="agenda-when">${when}${ev.time? ' · '+fmtTime12(ev.time):''}</div>
+      <div>
+        <div class="agenda-title">${escapeHtml(ev.title)}</div>
+        <div class="agenda-who">${ev.memberName || 'Everyone'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function escapeHtml(s){
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+// ---------- config panel ----------
+function openOverlay(){
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('loc-current').textContent = `Current: ${data.location.name}`;
+  renderMemberUI();
+  renderEventUI();
+}
+function closeOverlay(){
+  document.getElementById('overlay').classList.remove('open');
+}
+function renderMemberUI(){
+  const list = document.getElementById('member-list');
+  list.innerHTML = data.members.map((m,i) => `
+    <span class="member-tag">
+      <span class="swatch" style="background:${m.color}"></span>${escapeHtml(m.name)}
+      ${m.name !== 'Everyone' ? `<span data-i="${i}" class="rm-member" style="cursor:pointer; color:var(--text-dim); margin-left:4px;">✕</span>` : ''}
+    </span>
+  `).join('');
+  list.querySelectorAll('.rm-member').forEach(el => {
+    el.onclick = () => { data.members.splice(+el.dataset.i,1); saveData(); renderMemberUI(); populateMemberSelect(); };
+  });
+  populateMemberSelect();
+}
+function populateMemberSelect(){
+  const sel = document.getElementById('ev-member');
+  sel.innerHTML = '<option value="">Everyone</option>' + data.members.filter(m=>m.name!=='Everyone').map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
+}
+function renderEventUI(){
+  const list = document.getElementById('event-list');
+  if(!data.events.length){ list.innerHTML = '<div class="empty">No events yet.</div>'; return; }
+  const sorted = [...data.events].sort((a,b)=> a.date.localeCompare(b.date));
+  list.innerHTML = sorted.map((ev,i) => `
+    <div class="list-row">
+      <span class="chip"><span class="swatch" style="background:${memberColor(ev.memberName)}"></span>
+        ${escapeHtml(ev.title)} — ${ev.date}${ev.time? ' '+ev.time:''}${ev.repeatYearly?' (yearly)':''}
+      </span>
+      <button class="btn-danger" data-i="${data.events.indexOf(ev)}">Remove</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('button[data-i]').forEach(btn => {
+    btn.onclick = () => { data.events.splice(+btn.dataset.i,1); saveData(); renderEventUI(); renderWeekStrip(); renderAgenda(); };
+  });
+}
+
+async function geocodeAndSetLocation(query){
+  try{
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1`);
+    const j = await r.json();
+    if(!j.results || !j.results.length){ showToast('Location not found'); return; }
+    const res = j.results[0];
+    data.location = {
+      name: [res.name, res.admin1, res.country].filter(Boolean).join(', '),
+      lat: res.latitude, lon: res.longitude
+    };
+    await saveData();
+    document.getElementById('loc-current').textContent = `Current: ${data.location.name}`;
+    document.getElementById('loc-eyebrow').textContent = data.location.name;
+    loadWeather();
+    loadPrayerTimes();
+  }catch(e){
+    showToast('Could not update location');
+  }
+}
+
+// ---------- wire up events ----------
+document.getElementById('gear').onclick = openOverlay;
+document.getElementById('close-overlay').onclick = closeOverlay;
+document.getElementById('overlay').addEventListener('click', (e) => { if(e.target.id==='overlay') closeOverlay(); });
+
+document.getElementById('loc-save').onclick = () => {
+  const v = document.getElementById('loc-input').value.trim();
+  if(v) geocodeAndSetLocation(v);
+};
+document.getElementById('member-add').onclick = () => {
+  const name = document.getElementById('member-name').value.trim();
+  const color = document.getElementById('member-color').value;
+  if(!name) return;
+  data.members.push({ name, color });
+  document.getElementById('member-name').value = '';
+  saveData(); renderMemberUI(); renderWeekStrip(); renderAgenda();
+};
+document.getElementById('ev-add').onclick = () => {
+  const title = document.getElementById('ev-title').value.trim();
+  const date = document.getElementById('ev-date').value;
+  const time = document.getElementById('ev-time').value;
+  const memberName = document.getElementById('ev-member').value;
+  const repeatYearly = document.getElementById('ev-yearly').checked;
+  if(!title || !date) { showToast('Add a title and date'); return; }
+  data.events.push({ id: Date.now(), title, date, time: time||null, memberName, repeatYearly });
+  document.getElementById('ev-title').value = '';
+  document.getElementById('ev-date').value = '';
+  document.getElementById('ev-time').value = '';
+  document.getElementById('ev-yearly').checked = false;
+  saveData(); renderEventUI(); renderWeekStrip(); renderAgenda();
+};
+
+// ---------- init ----------
+async function init(){
+  await loadData();
+  document.getElementById('loc-eyebrow').textContent = data.location.name;
+  tickClock();
+  renderWeekStrip();
+  renderAgenda();
+  await Promise.all([loadWeather(), loadPrayerTimes()]);
+
+  setInterval(tickClock, 1000);
+  setInterval(updateNextPrayer, 15000);
+  setInterval(loadWeather, 15*60*1000);
+  setInterval(loadPrayerTimes, 60*60*1000);
+
+  // poll shared storage for remote edits made from another device
+  setInterval(async () => {
+    try{
+      const res = await window.storage.get(STORE_KEY, true);
+      if(res && res.value){
+        const fresh = JSON.parse(res.value);
+        if(JSON.stringify(fresh) !== JSON.stringify(data)){
+          data = fresh;
+          document.getElementById('loc-eyebrow').textContent = data.location.name;
+          renderWeekStrip(); renderAgenda();
+          loadWeather(); loadPrayerTimes();
+        }
+      }
+    }catch(e){}
+  }, 30000);
+}
+init();
+</script>
+</body>
+</html>

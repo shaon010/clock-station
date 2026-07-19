@@ -1,0 +1,102 @@
+[
+  {
+    "id": 1,
+    "chapter": "ইখলাস ও নিয়ত",
+    "bn": "নিশ্চয়ই সকল কাজ নিয়তের উপর নির্ভরশীল, এবং প্রত্যেক ব্যক্তি তার নিয়ত অনুযায়ীই ফল পাবে।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Bukhari 1 · Muslim 1907",
+    "grading": "Sahih (muttafaqun alayh)",
+    "source_url": "https://sunnah.com/bukhari:1",
+    "verified": false
+  },
+  {
+    "id": 2,
+    "chapter": "ঈমান ও ভ্রাতৃত্ব",
+    "bn": "তোমাদের কেউ ততক্ষণ পূর্ণ মুমিন হতে পারবে না, যতক্ষণ না সে তার ভাইয়ের জন্য তা-ই পছন্দ করে যা সে নিজের জন্য পছন্দ করে।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Bukhari 13 · Muslim 45",
+    "grading": "Sahih (muttafaqun alayh)",
+    "source_url": "https://sunnah.com/bukhari:13",
+    "verified": false
+  },
+  {
+    "id": 3,
+    "chapter": "জিহ্বার সংযম",
+    "bn": "যে ব্যক্তি আল্লাহ ও শেষ দিবসে বিশ্বাস রাখে, সে যেন ভালো কথা বলে অথবা চুপ থাকে।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Bukhari 6018 · Muslim 47",
+    "grading": "Sahih (muttafaqun alayh)",
+    "source_url": "https://sunnah.com/bukhari:6018",
+    "verified": false
+  },
+  {
+    "id": 4,
+    "chapter": "রাগ নিয়ন্ত্রণ",
+    "bn": "প্রকৃত বলবান সে নয় যে কুস্তিতে অন্যকে হারায়; বরং প্রকৃত বলবান সে-ই, যে রাগের সময় নিজেকে নিয়ন্ত্রণ করতে পারে।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Bukhari 6114 · Muslim 2609",
+    "grading": "Sahih (muttafaqun alayh)",
+    "source_url": "https://sunnah.com/bukhari:6114",
+    "verified": false
+  },
+  {
+    "id": 5,
+    "chapter": "আমলে ধারাবাহিকতা",
+    "bn": "আল্লাহর কাছে সবচেয়ে প্রিয় আমল সেটিই যা নিয়মিত করা হয়, যদিও তা পরিমাণে অল্প হয়।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Bukhari 6464 · Muslim 2818",
+    "grading": "Sahih (muttafaqun alayh)",
+    "source_url": "https://sunnah.com/bukhari:6464",
+    "verified": false
+  },
+  {
+    "id": 6,
+    "chapter": "সহজীকরণ",
+    "bn": "তোমরা সহজ করো, কঠিন করো না; সুসংবাদ দাও, বিতৃষ্ণা সৃষ্টি করো না।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Bukhari 69",
+    "grading": "Sahih",
+    "source_url": "https://sunnah.com/bukhari:69",
+    "verified": false
+  },
+  {
+    "id": 7,
+    "chapter": "প্রকৃত মুসলিম",
+    "bn": "প্রকৃত মুসলিম সে-ই, যার জিহ্বা ও হাত থেকে অন্য মুসলিমরা নিরাপদ থাকে।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Bukhari 10 · Muslim 40",
+    "grading": "Sahih (muttafaqun alayh)",
+    "source_url": "https://sunnah.com/bukhari:10",
+    "verified": false
+  },
+  {
+    "id": 8,
+    "chapter": "কল্যাণকামিতা",
+    "bn": "দ্বীন হলো কল্যাণকামিতা (নাসীহাহ)—আল্লাহর জন্য, তাঁর কিতাবের জন্য, তাঁর রাসূলের জন্য এবং মুসলিমদের নেতৃবৃন্দ ও সাধারণের জন্য।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Muslim 55",
+    "grading": "Sahih",
+    "source_url": "https://sunnah.com/muslim:55",
+    "verified": false
+  },
+  {
+    "id": 9,
+    "chapter": "পবিত্রতা",
+    "bn": "পবিত্রতা ঈমানের অর্ধেক।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Muslim 223",
+    "grading": "Sahih",
+    "source_url": "https://sunnah.com/muslim:223",
+    "verified": false
+  },
+  {
+    "id": 10,
+    "chapter": "উত্তম আচরণ",
+    "bn": "তোমার ভাইয়ের সাথে হাসিমুখে সাক্ষাৎ করাও একটি সদকা।",
+    "collection": "রিয়াদুস সালিহীন",
+    "ref": "Tirmidhi 1956",
+    "grading": "Hasan",
+    "source_url": "https://sunnah.com/tirmidhi:1956",
+    "verified": false
+  }
+]

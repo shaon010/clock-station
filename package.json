@@ -1,0 +1,16 @@
+{
+  "name": "clock-dock",
+  "version": "1.0.0",
+  "description": "Always-on desk display: clock, weather, prayer times + adhan, family calendar, and a daily hadith. Self-hosted, edit from any phone on the LAN.",
+  "type": "module",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "dependencies": {
+    "adhan": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

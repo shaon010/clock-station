@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Runtime-generated data (created by the server on first run)
+data/config.json
+data/weather-cache.json
+
+# User-supplied adhan audio (drop your own MP3s in public/audio/)
+public/audio/*.mp3
+public/audio/*.ogg
+public/audio/*.wav
+public/audio/*.m4a
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
