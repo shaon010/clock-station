@@ -4,9 +4,15 @@ import { createServer } from 'node:http';
 import { readFile, readdir } from 'node:fs/promises';
 import { join, normalize, extname } from 'node:path';
 import { networkInterfaces } from 'node:os';
+import { setDefaultResultOrder } from 'node:dns';
 import { getConfig, updateConfig, replaceConfig, ROOT } from './config.js';
 import { computePrayerTimes, METHOD_KEYS } from './prayer.js';
 import { getWeather } from './weather.js';
+
+// Some PaaS hosts (Render included) route IPv6 egress that's flaky while
+// IPv4 works fine — undici's fetch can fail outright instead of falling
+// back, so prefer IPv4 resolution for outbound requests everywhere.
+setDefaultResultOrder('ipv4first');
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC = join(ROOT, 'public');

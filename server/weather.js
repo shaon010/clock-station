@@ -57,7 +57,7 @@ export async function getWeather(cfg) {
   } catch (err) {
     // Without this, a fetch failure on a host (rate limit, DNS, timeout) is
     // completely invisible — the API just silently returns {unavailable}.
-    console.error('weather fetch failed:', err?.message || err);
+    console.error('weather fetch failed:', err?.message || err, err?.cause ? `cause: ${err.cause}` : '');
     if (mem?.data) return { ...mem.data, stale: true };
     return { unavailable: true };
   }
