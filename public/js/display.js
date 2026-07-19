@@ -89,8 +89,11 @@ function setupFitToScreen() {
 // Ask the display device where it is and use that for prayer times + weather.
 // Needs a secure context — works when the display is kiosked on http://localhost.
 // If denied or unavailable we simply keep the configured location.
+// Skipped when location.auto is off — e.g. the user picked a specific place in
+// Settings, which should stick instead of being overwritten by GPS on next load.
 async function initDeviceLocation() {
   if (!('geolocation' in navigator)) return;
+  if (cfg?.location?.auto === false) return;
   const pos = await new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       (p) => resolve(p),
@@ -140,6 +143,7 @@ async function refreshConfig() {
   document.documentElement.dataset.theme = cfg.theme || 'midnight';
   document.documentElement.dataset.clockStyle = cfg.clockStyle || 'standard';
   document.documentElement.style.fontSize = (16 * (cfg.fontScale || 1)) + 'px';
+  if (cfg.location?.auto === false) deviceLoc = null;   // manual location wins over any stale GPS fix
   $('loc').textContent = deviceLoc?.name || cfg.location?.name || '';
   $('hadith-card').style.display = cfg.hadith?.show === false ? 'none' : '';
   applyDimming();

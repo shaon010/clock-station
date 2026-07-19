@@ -63,9 +63,13 @@ async function populateMuezzins() {
 }
 
 // ---------- location ----------
-function renderLocation() { $('#loc-current').textContent = 'Current: ' + (cfg.location?.name || '—'); }
+function renderLocation() {
+  $('#loc-current').textContent = 'Current: ' + (cfg.location?.name || '—');
+  const auto = $('#loc-auto');
+  if (auto) auto.checked = cfg.location?.auto !== false;
+}
 function wireLocationSearch() {
-  const q = $('#loc-q'), box = $('#loc-results');
+  const q = $('#loc-q'), box = $('#loc-results'), auto = $('#loc-auto');
   q.addEventListener('input', debounce(async () => {
     const term = q.value.trim();
     if (term.length < 2) { box.innerHTML = ''; return; }
@@ -74,11 +78,18 @@ function wireLocationSearch() {
       `<button class="btn ghost full" data-i="${i}" style="text-align:left">${[r.name, r.admin1, r.country].filter(Boolean).join(', ')}</button>`).join('');
     box.querySelectorAll('button').forEach((b) => b.onclick = async () => {
       const r = j.results[+b.dataset.i];
-      await patch({ location: { name: [r.name, r.admin1, r.country].filter(Boolean).join(', '), lat: r.latitude, lon: r.longitude } });
-      cfg.location = { name: [r.name, r.admin1, r.country].filter(Boolean).join(', '), lat: r.latitude, lon: r.longitude };
+      // Picking a place here means "use this" — turn off the display's own GPS
+      // so it doesn't silently overwrite this choice on its next reload.
+      const location = { name: [r.name, r.admin1, r.country].filter(Boolean).join(', '), lat: r.latitude, lon: r.longitude, auto: false };
+      await patch({ location });
+      cfg.location = location;
       renderLocation(); box.innerHTML = ''; q.value = '';
     });
   }, 350));
+  auto?.addEventListener('change', async () => {
+    await patch({ location: { ...cfg.location, auto: auto.checked } });
+    cfg.location = { ...cfg.location, auto: auto.checked };
+  });
 }
 
 // ---------- members ----------

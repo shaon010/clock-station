@@ -11,7 +11,7 @@ const DATA_DIR = join(ROOT, 'data');
 const CONFIG_PATH = join(DATA_DIR, 'config.json');
 
 export const DEFAULT_CONFIG = {
-  location: { name: 'Dhaka, Bangladesh', lat: 23.8103, lon: 90.4125 },
+  location: { name: 'Dhaka, Bangladesh', lat: 23.8103, lon: 90.4125, auto: true },
   theme: 'midnight',                       // midnight | daylight | focus | warm | nord | forest | sunset | mono | paper
   clockStyle: 'standard',                  // standard | flip | lcd | minimal (clock face look)
   units: { temp: 'c', clock: '12' },       // temp: c|f   clock: 12|24
