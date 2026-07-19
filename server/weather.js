@@ -8,6 +8,9 @@ import { ROOT } from './config.js';
 const CACHE_PATH = join(ROOT, 'data', 'weather-cache.json');
 const FRESH_MS = 10 * 60 * 1000; // consider a fetch fresh for 10 minutes
 const FORECAST_DAYS = 7;         // how many days the "next 7 days" strip shows
+const FETCH_TIMEOUT_MS = 15000;  // hosted PaaS egress can be much slower than local
+// Some hosts deprioritize/rate-limit requests with no User-Agent (looks like a bot).
+const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; ClockDock/1.0; +family desk display)' };
 
 let mem = null;
 
@@ -24,8 +27,8 @@ export async function getWeather(cfg) {
       `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day` +
       `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset` +
       `&timezone=auto&forecast_days=${FORECAST_DAYS}`;
-    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) throw new Error(`weather ${r.status}`);
+    const r = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    if (!r.ok) throw new Error(`weather ${r.status} ${await r.text().catch(() => '')}`);
     const j = await r.json();
 
     const d = j.daily || {};
@@ -51,7 +54,10 @@ export async function getWeather(cfg) {
     mem = { key, fetchedAt: Date.now(), data };
     writeCache(mem).catch(() => {});
     return { ...data, stale: false };
-  } catch {
+  } catch (err) {
+    // Without this, a fetch failure on a host (rate limit, DNS, timeout) is
+    // completely invisible — the API just silently returns {unavailable}.
+    console.error('weather fetch failed:', err?.message || err);
     if (mem?.data) return { ...mem.data, stale: true };
     return { unavailable: true };
   }

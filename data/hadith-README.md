@@ -1,62 +1,92 @@
-# hadith.json — how to complete & verify to 100
+# hadith.json — provenance & verification
 
 This file feeds the **"Hadith of the day"** card. The app picks one entry per
 calendar day (deterministically, cycling through all before repeating), so the
 quality of this file is the quality of what your family reads every day.
 
-## ⚠️ Integrity first
+## Provenance
 
-The 10 entries shipped here are **well-known hadith from Riyad as-Salihin**, each
-anchored to a checkable **Bukhari/Muslim/Tirmidhi reference + a sunnah.com URL**.
+All **26 entries** are **direct, verbatim Bangla text** copied from a printed
+Bangla translation of **Riyad as-Salihin** (Imam an-Nawawi), volume 1 —
+sourced from the PDF at `https://shibircloud.com/pdf/riyadus_salehin_1.pdf`
+(ICS Bangla edition, translator/publisher credit inside the PDF itself). No
+retranslation, paraphrase, or outside wording was introduced: each `bn` field
+is exactly what is printed on the cited page, including the narrator
+attribution sentence, minus only the trailing grading note in parentheses
+(which is pulled into its own `grading` field) and the leading hadith-number
+digit (which is a list marker, not part of the sentence).
 
-All 10 are now marked `"verified": true`: every reference number (including the
-tricky Sahih Muslim / ʿAbd al-Bāqī numbering) and the meaning of every Bangla
-translation were checked one-by-one against sunnah.com. Two notes worth knowing:
-- **id 3** (Bukhari 6018 · Muslim 47) translates only the *"speak good or stay
-  silent"* clause; the full hadith also mentions the neighbour and the guest.
-- **id 10** (Tirmidhi 1956) is graded *hasan* by at-Tirmidhi (al-Albani: *sahih*).
+**Why hadithbd.com wasn't used:** the site's `robots.txt` explicitly disallows
+AI crawlers (including Claude) and its Cloudflare bot-check blocks automated
+fetches, so it was not scraped. This PDF, provided directly, was used instead.
 
-`verified: true` here means "reference + meaning confirmed against sunnah.com."
-The Bangla is a faithful translation, not a scan of one specific print edition —
-if you want edition-exact wording, still have a knowledgeable person review it.
+## Selection criteria — "small" hadith only
 
-**Never** add a hadith without a real, checkable source. Do not paraphrase from
-memory. When in doubt, leave it out.
+Per instruction, only **short, self-contained** hadith were selected — single
+narrations that read fully within one printed page, without long chains of
+dialogue, multi-page narratives, or the well-known very long hadith (e.g. the
+"actions are by intentions" hadith with its full explanation, or the Jibril
+hadith defining Islam/Iman/Ihsan). Many chapters contain only long hadith and
+were skipped entirely rather than force a fit.
+
+## Verification performed
+
+Every entry was checked **one by one, directly against the source PDF**:
+1. Each candidate page was rendered to an image and read visually (not OCR —
+   the PDF is a scanned book with no extractable text layer, so an OCR error
+   could have silently corrupted the Bangla script; each page was instead
+   read directly).
+2. The **chapter attribution** was confirmed by locating the nearest
+   `অনুচ্ছেদ ঃ N` heading actually printed on/before that page (headings and
+   hadith text don't always share a page boundary — a new chapter's heading
+   can appear partway down a page, after the tail end of the previous
+   chapter's last hadith. This was checked hadith-by-hadith, not assumed from
+   a table-of-contents page range).
+3. `bn` was transcribed to match the page image exactly; `grading` was taken
+   from the page's own closing citation (e.g. "মুত্তাফাকুন আলাইহি", "রাওয়াহু
+   মুসলিম").
+4. `source` records the exact page number so any entry can be re-checked
+   against the same PDF.
+
+All 26 are marked `"verified": true` on this basis.
+
+**Never** add a hadith without a real, checkable source. Do not paraphrase or
+retranslate. When in doubt, leave it out.
 
 ## Entry schema
 
 ```json
 {
-  "id": 11,
-  "chapter": "অধ্যায়ের নাম (Bangla)",
-  "bn": "বাংলা অনুবাদ",
-  "collection": "রিয়াদুস সালিহীন",
-  "ref": "Bukhari 1 · Muslim 1907",     // primary, verifiable source
-  "grading": "Sahih (muttafaqun alayh)",
-  "source_url": "https://sunnah.com/bukhari:1",
-  "verified": true                       // set true only after checking
+  "id": 1,
+  "chapter": "ইখলাস (নিষ্ঠা) ও নিয়াত (অভিপ্রায়)",
+  "bn": "আয়িশা (রা) থেকে বর্ণিত। ...",
+  "collection": "রিয়াদুস সালেহীন",
+  "ref": "রিয়াদুস সালেহীন, হাদীস ৩",
+  "grading": "মুত্তাফাকুন আলাইহি (বুখারী, মুসলিম)",
+  "source": "রিয়াদুস সালেহীন (বাংলা অনুবাদ), ১ম খণ্ড, পৃষ্ঠা ১৮",
+  "verified": true
 }
 ```
 
-Only `chapter`, `bn`, `ref`, and `source_url` are shown on screen (`grading` too).
-`id` just needs to be unique; `verified` is for your own tracking.
+Only `chapter`, `bn`, `ref`, `grading`, and `collection` are shown on screen.
+`id` just needs to be unique; `source`/`verified` are for your own tracking.
 
-## Suggested workflow to reach 100
+## Extending further
 
-1. **Pick 100 hadith across chapters** of Riyad as-Salihin (Imam an-Nawawi) from
-   an authentic Bangla print/edition you trust, spread across topics (intention,
-   patience, truthfulness, salah, parents, neighbours, dhikr, manners, etc.).
-2. For each, open its page on **sunnah.com/riyadussalihin** (or the Bukhari/Muslim
-   source) and copy the exact reference number into `ref` + `source_url`.
-3. Paste the **Bangla text from your trusted edition** into `bn` — not an
-   improvised translation.
-4. Confirm `ref`/`grading` against `source_url`, then set `verified: true`.
-5. **Have a knowledgeable person / scholar review the final file** before launch.
+This PDF is only **volume 1** (covers roughly the first 48 chapters / ~389
+hadith of Riyad as-Salihin — it ends mid-book, at "সৎ লোক, দুর্বল ও
+মিসকীনদের কষ্ট দেয়ার বিরুদ্ধে সতর্কীকরণ"). To add more:
+- Stay with **short, self-contained** hadith — the point of this file is a
+  daily card someone reads in a few seconds, not a study text.
+- Verify chapter attribution by checking which `অনুচ্ছেদ` heading actually
+  precedes the hadith on the page, not just a table-of-contents page range.
+- Copy the Bangla verbatim from a real printed/PDF source — never translate
+  or paraphrase from memory.
 
 ## Notes
 
 - The card renders Bangla with the OS font (Nirmala UI on Windows), so conjuncts
   display correctly with no font download.
-- You can add fewer or more than 100 — the rotation adapts to the array length.
+- You can add fewer or more than 26 — the rotation adapts to the array length.
 - After editing this file, the display refreshes the hadith on its next daily
   rollover, or immediately if you change any setting (which pushes an update).
