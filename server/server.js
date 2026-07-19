@@ -106,7 +106,12 @@ const server = createServer(async (req, res) => {
   const method = req.method;
 
   try {
-    // Health check for uptime monitors (e.g. UptimeRobot) to keep free hosts awake
+    // Health check for uptime monitors (e.g. UptimeRobot) to keep free hosts awake.
+    // Uptime monitors often probe with HEAD instead of GET, so answer both.
+    if (path === '/health' && method === 'HEAD') {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end();
+    }
     if (path === '/health' && method === 'GET') return sendJSON(res, { ok: true });
 
     // Pages
