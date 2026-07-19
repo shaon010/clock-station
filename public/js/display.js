@@ -37,6 +37,7 @@ async function init() {
 // ---------- fullscreen toggle ----------
 function setupFullscreenToggle() {
   const btn = $('fullscreen-btn');
+  const icon = $('fullscreen-icon');
   if (!btn) return;
   if (!document.documentElement.requestFullscreen) { btn.hidden = true; return; }
   btn.addEventListener('click', () => {
@@ -44,7 +45,9 @@ function setupFullscreenToggle() {
     else document.documentElement.requestFullscreen().catch(() => {});
   });
   document.addEventListener('fullscreenchange', () => {
-    btn.title = document.fullscreenElement ? 'Exit fullscreen' : 'Enter fullscreen';
+    const isFullscreen = !!document.fullscreenElement;
+    btn.title = isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen';
+    if (icon) icon.textContent = isFullscreen ? '✕' : '⛶';
   });
 }
 
