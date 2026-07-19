@@ -86,6 +86,9 @@ const server = createServer(async (req, res) => {
   const method = req.method;
 
   try {
+    // Health check for uptime monitors (e.g. UptimeRobot) to keep free hosts awake
+    if (path === '/health' && method === 'GET') return sendJSON(res, { ok: true });
+
     // Pages
     if (path === '/' && method === 'GET') return serveStatic(res, 'display.html');
     if (path === '/settings' && method === 'GET') return serveStatic(res, 'settings.html');

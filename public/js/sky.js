@@ -25,6 +25,9 @@
   let stars = [], clouds = [], drops = [], flakes = [], motes = [];
   let flash = 0, boltTimer = 3, bolt = null;
   let primed = false;              // snap to the right palette on first paint
+  let lastPhase = null, phaseTimer = 0;   // tracks day/dawn/dusk/night so the sky
+                                          // keeps drifting with the clock between
+                                          // weather refreshes, not just when set() runs
 
   // ---------- public API ----------
   function init(canvas) {
@@ -149,6 +152,7 @@
   function rebuild() {
     const area = W * H;
     const s = sky();
+    lastPhase = s.phase;
     const p = palette(s.phase);
     target.top = p.top; target.bot = p.bot;
     // celestial visibility fades out under thick cloud / precip
@@ -262,6 +266,15 @@
   }
 
   function step(dt) {
+    // Re-check the time-of-day phase (day/dawn/dusk/night) every few seconds so
+    // the sky keeps drifting through sunrise/sunset on its own — rebuild() only
+    // otherwise runs when weather refreshes (every 10min) or config changes.
+    phaseTimer += dt;
+    if (phaseTimer > 5) {
+      phaseTimer = 0;
+      if (sky().phase !== lastPhase) rebuild();
+    }
+
     // ease palette + celestial toward the target scene
     for (let i = 0; i < 3; i++) {
       cur.top[i] += (target.top[i] - cur.top[i]) * Math.min(1, dt * 1.2);
@@ -317,10 +330,13 @@
     // sun / moon
     if (cur.celest > 0.02 && s.cy < H * 0.9) {
       const warm = s.celestial === 'sun';
-      const R = warm ? (s.phase === 'day' ? 190 : 230) : 150;
-      ctx.globalAlpha = cur.celest;
-      // colored glow via tint rectangle masked by the white glow sprite
-      ctx.globalCompositeOperation = 'lighter';
+      const isDayGlow = warm && s.phase === 'day';
+      const R = warm ? (isDayGlow ? 120 : 230) : 150;
+      // daytime sun sits on an already-bright sky, so skip the additive "lighter"
+      // blend there (it was washing the whole screen toward white/hazy) and keep
+      // it for dawn/dusk/night where the darker backdrop needs the extra glow.
+      ctx.globalAlpha = isDayGlow ? cur.celest * 0.55 : cur.celest;
+      ctx.globalCompositeOperation = isDayGlow ? 'source-over' : 'lighter';
       drawTinted(glowSprite, s.cx - R, s.cy - R, R * 2, R * 2,
         warm ? (s.phase === 'day' ? [255, 236, 180] : [255, 180, 120]) : [200, 214, 245]);
       // crisp disc

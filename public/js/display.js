@@ -31,6 +31,21 @@ async function init() {
   // Arm audio on any user tap (covers the autoplay-blocked fallback overlay).
   $('sound-arm').addEventListener('click', armSound);
   document.body.addEventListener('click', () => { if (!soundArmed) armSound(); }, { once: true });
+  setupFullscreenToggle();
+}
+
+// ---------- fullscreen toggle ----------
+function setupFullscreenToggle() {
+  const btn = $('fullscreen-btn');
+  if (!btn) return;
+  if (!document.documentElement.requestFullscreen) { btn.hidden = true; return; }
+  btn.addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => {});
+  });
+  document.addEventListener('fullscreenchange', () => {
+    btn.title = document.fullscreenElement ? 'Exit fullscreen' : 'Enter fullscreen';
+  });
 }
 
 // ---------- fit to screen ----------

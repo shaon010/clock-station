@@ -17,8 +17,11 @@
   --bg: #0d1117;
   --bg-glow: radial-gradient(ellipse at 18% -5%, rgba(76,166,166,0.10), transparent 55%),
              radial-gradient(ellipse at 95% 105%, rgba(76,166,166,0.06), transparent 55%);
-  --surface: rgba(255,255,255,0.045);
-  --surface-2: rgba(255,255,255,0.025);
+  /* Cards are frosted glass over the animated sky: tinted toward --bg (not
+     white) and opaque enough that a bright sunny-day sky behind the blur can't
+     wash out the light card text. */
+  --surface: rgba(13,17,23,0.62);
+  --surface-2: rgba(255,255,255,0.035);
   --border: rgba(255,255,255,0.085);
   --track: rgba(255,255,255,0.12);
   --text: #e8edf2;
@@ -50,8 +53,8 @@
 :root[data-theme="focus"] {
   --bg: #08090c;
   --bg-glow: radial-gradient(ellipse at 50% -10%, rgba(224,164,88,0.09), transparent 55%);
-  --surface: rgba(255,255,255,0.03);
-  --surface-2: rgba(255,255,255,0.02);
+  --surface: rgba(8,9,12,0.66);
+  --surface-2: rgba(255,255,255,0.03);
   --border: rgba(255,255,255,0.06);
   --track: rgba(255,255,255,0.10);
   --text: #f2ede4;
@@ -71,8 +74,8 @@
   --bg: #0B1220;
   --bg-glow: radial-gradient(ellipse at 20% 0%, rgba(212,175,55,0.10), transparent 55%),
              radial-gradient(ellipse at 90% 100%, rgba(63,167,150,0.10), transparent 55%);
-  --surface: rgba(255,255,255,0.045);
-  --surface-2: rgba(255,255,255,0.03);
+  --surface: rgba(11,18,32,0.62);
+  --surface-2: rgba(255,255,255,0.035);
   --border: rgba(255,255,255,0.09);
   --track: rgba(255,255,255,0.12);
   --text: #F3EFE6;
