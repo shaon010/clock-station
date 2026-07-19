@@ -35,14 +35,17 @@
   <div class="grid">
     <!-- LEFT -->
     <div class="col">
+      <!-- CLOCK HERO — half-screen widget, shares the left column with prayers -->
       <div class="card hero">
-        <div class="clock tnum" id="clock">--:--</div>
+        <div class="clock tnum" id="clock" data-style="standard">--:--</div>
         <div class="datebar">
           <div class="greg" id="greg">—</div>
           <div class="hijri" id="hijri">—</div>
         </div>
+      </div>
 
-        <div class="next-prayer">
+      <div class="card prayer-card">
+        <div class="np-bar">
           <div class="arc-wrap">
             <svg viewBox="0 0 74 74">
               <circle class="arc-track" cx="37" cy="37" r="30"></circle>
@@ -50,20 +53,13 @@
             </svg>
             <div class="arc-label" id="arc-pct">--</div>
           </div>
-          <div>
+          <div class="np-info">
             <div class="np-label">Next prayer</div>
             <div class="np-name" id="np-name">—</div>
-            <div class="np-in" id="np-in">—</div>
           </div>
+          <div class="np-in" id="np-in">—</div>
         </div>
-      </div>
-
-      <div class="card">
-        <h2 class="section-title">Today's prayers</h2>
-        <div class="prayer-head">
-          <span>Prayer</span><span>Adhan</span><span class="head-iqamah">Iqamah</span>
-        </div>
-        <ul class="prayer-list" id="prayers"></ul>
+        <div class="prayer-grid" id="prayers"></div>
       </div>
     </div>
 
@@ -80,6 +76,7 @@
           </div>
         </div>
         <div class="wx-stats" id="wx-stats"></div>
+        <div class="wx-forecast" id="wx-forecast"></div>
       </div>
 
       <div class="card hide-on-focus">

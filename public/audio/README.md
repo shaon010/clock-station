@@ -1,5 +1,14 @@
 # public/audio/ — adhan files (drop-in)
 
+**Bundled now:** `mishary.mp3` (regular adhan) and `mishary-fajr.mp3` (Fajr adhan),
+Mishary Rashid Alafasy, downloaded from the Internet Archive (archive.org) for
+free personal/religious use. The default config already uses `mishary`, so the
+adhan works out of the box. `iqamah.mp3` is **not** bundled — the iqamah chime is
+off by default; add a file only if you enable it in Settings.
+
+Sources: <https://archive.org/details/AdhanMisharyRashid> (regular) and
+<https://archive.org/details/AdhanFajrAndDuaBySyeikhMisharyRashidAlAfasy> (Fajr).
+
 Put your adhan MP3s in this folder. The muezzin dropdown in Settings lists
 whatever it finds here. Expected filenames:
 

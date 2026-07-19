@@ -7,7 +7,7 @@
     "ref": "Bukhari 1 · Muslim 1907",
     "grading": "Sahih (muttafaqun alayh)",
     "source_url": "https://sunnah.com/bukhari:1",
-    "verified": false
+    "verified": true
   },
   {
     "id": 2,
@@ -17,7 +17,7 @@
     "ref": "Bukhari 13 · Muslim 45",
     "grading": "Sahih (muttafaqun alayh)",
     "source_url": "https://sunnah.com/bukhari:13",
-    "verified": false
+    "verified": true
   },
   {
     "id": 3,
@@ -27,7 +27,7 @@
     "ref": "Bukhari 6018 · Muslim 47",
     "grading": "Sahih (muttafaqun alayh)",
     "source_url": "https://sunnah.com/bukhari:6018",
-    "verified": false
+    "verified": true
   },
   {
     "id": 4,
@@ -37,7 +37,7 @@
     "ref": "Bukhari 6114 · Muslim 2609",
     "grading": "Sahih (muttafaqun alayh)",
     "source_url": "https://sunnah.com/bukhari:6114",
-    "verified": false
+    "verified": true
   },
   {
     "id": 5,
@@ -47,7 +47,7 @@
     "ref": "Bukhari 6464 · Muslim 2818",
     "grading": "Sahih (muttafaqun alayh)",
     "source_url": "https://sunnah.com/bukhari:6464",
-    "verified": false
+    "verified": true
   },
   {
     "id": 6,
@@ -57,7 +57,7 @@
     "ref": "Bukhari 69",
     "grading": "Sahih",
     "source_url": "https://sunnah.com/bukhari:69",
-    "verified": false
+    "verified": true
   },
   {
     "id": 7,
@@ -67,7 +67,7 @@
     "ref": "Bukhari 10 · Muslim 40",
     "grading": "Sahih (muttafaqun alayh)",
     "source_url": "https://sunnah.com/bukhari:10",
-    "verified": false
+    "verified": true
   },
   {
     "id": 8,
@@ -77,7 +77,7 @@
     "ref": "Muslim 55",
     "grading": "Sahih",
     "source_url": "https://sunnah.com/muslim:55",
-    "verified": false
+    "verified": true
   },
   {
     "id": 9,
@@ -87,7 +87,7 @@
     "ref": "Muslim 223",
     "grading": "Sahih",
     "source_url": "https://sunnah.com/muslim:223",
-    "verified": false
+    "verified": true
   },
   {
     "id": 10,
@@ -97,6 +97,6 @@
     "ref": "Tirmidhi 1956",
     "grading": "Hasan",
     "source_url": "https://sunnah.com/tirmidhi:1956",
-    "verified": false
+    "verified": true
   }
 ]

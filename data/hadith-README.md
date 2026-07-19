@@ -8,9 +8,17 @@ quality of this file is the quality of what your family reads every day.
 
 The 10 entries shipped here are **well-known hadith from Riyad as-Salihin**, each
 anchored to a checkable **Bukhari/Muslim/Tirmidhi reference + a sunnah.com URL**.
-Every entry is marked `"verified": false` **on purpose** — the Bangla wording was
-not taken from a published, authoritative Bangla edition and **must be checked**
-before you rely on it. Do not treat `verified: false` entries as final.
+
+All 10 are now marked `"verified": true`: every reference number (including the
+tricky Sahih Muslim / ʿAbd al-Bāqī numbering) and the meaning of every Bangla
+translation were checked one-by-one against sunnah.com. Two notes worth knowing:
+- **id 3** (Bukhari 6018 · Muslim 47) translates only the *"speak good or stay
+  silent"* clause; the full hadith also mentions the neighbour and the guest.
+- **id 10** (Tirmidhi 1956) is graded *hasan* by at-Tirmidhi (al-Albani: *sahih*).
+
+`verified: true` here means "reference + meaning confirmed against sunnah.com."
+The Bangla is a faithful translation, not a scan of one specific print edition —
+if you want edition-exact wording, still have a knowledgeable person review it.
 
 **Never** add a hadith without a real, checkable source. Do not paraphrase from
 memory. When in doubt, leave it out.

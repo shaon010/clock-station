@@ -22,7 +22,7 @@ async function init() {
   initDeviceLocation();   // async: switches to device location once permitted
   tick();
   setInterval(tick, 1000);
-  setInterval(refreshWeather, 15 * 60 * 1000);
+  setInterval(refreshWeather, 10 * 60 * 1000);   // matches the server's 10-min cache
   setInterval(refreshPrayer, 60 * 60 * 1000);
   setupSSE();
   requestWake();
@@ -88,7 +88,28 @@ async function initDeviceLocation() {
   loc.name = (rg && rg.name) || `${loc.lat.toFixed(2)}, ${loc.lon.toFixed(2)}`;
   deviceLoc = loc;
   $('loc').textContent = loc.name;
+  await persistDeviceLoc(loc);   // so Settings shows the location actually in use
   await Promise.all([refreshPrayer(), refreshWeather()]);   // recompute for the real location
+}
+
+// Save the auto-detected location into config so the settings page (which reads
+// config, not the display's live GPS) reflects what the display is really using.
+// GPS is the primary source, so it's authoritative over a stale/default value.
+// Skips the write — and its config-changed broadcast — when nothing changed.
+async function persistDeviceLoc(loc) {
+  const cur = cfg?.location || {};
+  const same = cur.name === loc.name
+    && Math.abs((cur.lat ?? 0) - loc.lat) < 0.005      // ~500m: ignore GPS jitter
+    && Math.abs((cur.lon ?? 0) - loc.lon) < 0.005;
+  if (same) return;
+  const location = { name: loc.name, lat: loc.lat, lon: loc.lon };
+  try {
+    await fetch('/api/config', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location })
+    });
+    if (cfg) cfg.location = location;
+  } catch {}
 }
 
 // Query string that pins server calls to the device location, when we have it.
@@ -102,6 +123,7 @@ function locQS() {
 async function refreshConfig() {
   cfg = await fetchJSON('/api/config');
   document.documentElement.dataset.theme = cfg.theme || 'midnight';
+  document.documentElement.dataset.clockStyle = cfg.clockStyle || 'standard';
   document.documentElement.style.fontSize = (16 * (cfg.fontScale || 1)) + 'px';
   $('loc').textContent = deviceLoc?.name || cfg.location?.name || '';
   $('hadith-card').style.display = cfg.hadith?.show === false ? 'none' : '';
@@ -127,18 +149,75 @@ function tick() {
   if (now.getSeconds() === 0) applyDimming(); // re-evaluate night dim each minute
 }
 
-function drawClock(now) {
-  let h = now.getHours();
+// Split the current time into the digits string ("12:45") and meridiem ("PM"/"").
+function clockParts(now) {
   const m = String(now.getMinutes()).padStart(2, '0');
-  if ((cfg.units?.clock || '12') === '24') {
-    $('clock').textContent = `${String(h).padStart(2, '0')}:${m}`;
-  } else {
-    const ap = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    $('clock').innerHTML = `${h}:${m}<span class="ampm">${ap}</span>`;
+  let h = now.getHours();
+  if ((cfg?.units?.clock || '12') === '24') return { main: `${String(h).padStart(2, '0')}:${m}`, ap: '' };
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return { main: `${h}:${m}`, ap };
+}
+
+function drawClock(now) {
+  const { main, ap } = clockParts(now);
+  const style = cfg?.clockStyle || 'standard';
+  const el = $('clock');
+  if (el.dataset.style !== style) {   // switching styles: wipe any prior markup/state
+    el.dataset.style = style;
+    el.innerHTML = '';
+    el._flip = null;
   }
+  if (style === 'flip') renderFlipClock(el, main, ap);
+  else renderPlainClock(el, main, ap, style);
+
   $('greg').textContent = now.toLocaleDateString(undefined,
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// standard / minimal / lcd — plain text, LCD adds a faint "all-segments" ghost.
+function renderPlainClock(el, main, ap, style) {
+  const apHtml = ap ? `<span class="ampm">${ap}</span>` : '';
+  const html = style === 'lcd'
+    ? `<span class="lcd"><span class="lcd-ghost" aria-hidden="true">${main.replace(/\d/g, '8')}</span><span class="lcd-live">${main}</span></span>${apHtml}`
+    : `${main}${apHtml}`;
+  if (el._html !== html) { el.innerHTML = html; el._html = html; }
+}
+
+// Split-flap "paper" clock: one card per digit, each folds when its value changes.
+function renderFlipClock(el, main, ap) {
+  const chars = main.split('');
+  const shape = chars.map((c) => (c === ':' ? ':' : 'd')).join('') + (ap ? '+' : '');
+  if (el._flip !== shape) {   // (re)build only when the digit layout changes
+    el._flip = shape;
+    el.innerHTML = chars.map((c) => c === ':'
+      ? '<span class="flip-colon">:</span>'
+      : '<span class="flip-digit"><span class="fd fd-top"></span><span class="fd fd-bottom"></span>'
+        + '<span class="fd flap flap-top"></span><span class="fd flap flap-bottom"></span></span>'
+    ).join('') + (ap ? `<span class="flip-ampm">${ap}</span>` : '');
+  }
+  const cells = el.querySelectorAll('.flip-digit');
+  let i = 0;
+  for (const c of chars) { if (c !== ':') setFlipDigit(cells[i++], c); }
+  if (ap) el.querySelector('.flip-ampm').textContent = ap;
+}
+
+function setFlipDigit(cell, val) {
+  if (!cell || cell.dataset.v === val) return;
+  const cur = cell.dataset.v;
+  cell.dataset.v = val;
+  const top = cell.querySelector('.fd-top'), bottom = cell.querySelector('.fd-bottom');
+  const flapTop = cell.querySelector('.flap-top'), flapBottom = cell.querySelector('.flap-bottom');
+  if (cur == null) { top.textContent = bottom.textContent = val; return; }   // first paint, no flip
+  top.textContent = val;          // new upper half, revealed as the old flap folds away
+  bottom.textContent = cur;       // old lower half, until the new flap unfolds over it
+  flapTop.textContent = cur;      // folds down (old top)
+  flapBottom.textContent = val;   // unfolds down (new bottom)
+  cell.classList.remove('flip-anim');
+  void cell.offsetWidth;          // restart the animation
+  cell.classList.add('flip-anim');
+  clearTimeout(cell._t);
+  cell._t = setTimeout(() => { cell.classList.remove('flip-anim'); bottom.textContent = val; }, 520);
 }
 
 // ---------- prayer times ----------
@@ -149,16 +228,26 @@ async function refreshPrayer() {
   renderPrayerList();
 }
 
+// Split "5:12 AM" into ["5:12", "AM"]; 24h ("17:00") yields ["17:00", ""].
+function splitTime(hhmm) {
+  const [t, ap = ''] = fmt12(hhmm).split(' ');
+  return [t, ap];
+}
+
 function renderPrayerList() {
   if (!prayer) return;
   const order = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
   $('prayers').innerHTML = order.map((name) => {
     const label = name === 'Dhuhr' ? prayer.dhuhrLabel : name;
-    const iq = (name === 'Sunrise') ? '' : fmt12(prayer.iqamah[name]);
-    return `<li data-name="${name}">
+    const [at, aap] = splitTime(prayer.timings[name]);
+    const iqRaw = (name === 'Sunrise') ? '' : prayer.iqamah[name];
+    const iq = iqRaw
+      ? `<span class="iqtime tnum"><span class="iqlab">iqamah</span> ${fmt12(iqRaw)}</span>`
+      : `<span class="iqtime iq-none">—</span>`;
+    return `<div class="ptile" data-name="${name}">
       <span class="pname">${label}</span>
-      <span class="ptime tnum">${fmt12(prayer.timings[name])}</span>
-      <span class="iqtime tnum">${iq}</span></li>`;
+      <span class="ptime tnum">${at}${aap ? `<span class="ampm">${aap}</span>` : ''}</span>
+      ${iq}</div>`;
   }).join('');
 }
 
@@ -178,8 +267,8 @@ function updateNextPrayer(now) {
   const span = next.min - prevMin, pct = Math.max(0, Math.min(1, (nowMin - prevMin) / span));
   $('arc').style.strokeDashoffset = String(188.5 * (1 - pct));
   $('arc-pct').textContent = Math.round(pct * 100) + '%';
-  document.querySelectorAll('#prayers li').forEach((li) =>
-    li.classList.toggle('active', li.dataset.name === next.name));
+  document.querySelectorAll('#prayers .ptile').forEach((el) =>
+    el.classList.toggle('active', el.dataset.name === next.name));
 }
 
 // ---------- adhan scheduler ----------
@@ -261,6 +350,27 @@ async function refreshWeather() {
   if (w.sunrise) stats.push(`↑ <b>${clockOf(w.sunrise)}</b>`);
   if (w.sunset) stats.push(`↓ <b>${clockOf(w.sunset)}</b>`);
   $('wx-stats').innerHTML = stats.map((s) => `<span class="wx-stat">${s}</span>`).join('');
+  renderForecast(w.daily || [], conv);
+}
+
+// 7-day strip: weekday + condition icon + high/low. Uses daytime icons.
+function renderForecast(days, conv) {
+  const el = $('wx-forecast');
+  if (!el) return;
+  const todayISO = iso(new Date());
+  el.innerHTML = days.slice(0, 7).map((d) => {
+    const dt = new Date(d.date + 'T12:00:00');
+    const label = d.date === todayISO ? 'Today'
+      : dt.toLocaleDateString(undefined, { weekday: 'short' });
+    const meta = wmo(d.code, true);   // daytime look for a daily summary
+    const hi = d.maxC != null ? conv(d.maxC) + '°' : '—';
+    const lo = d.minC != null ? conv(d.minC) + '°' : '—';
+    return `<div class="wx-day${d.date === todayISO ? ' today' : ''}">
+      <div class="wx-day-name">${label}</div>
+      <div class="wx-day-icon" title="${meta.text}">${meta.icon}</div>
+      <div class="wx-day-temp"><b class="tnum">${hi}</b><span class="tnum">${lo}</span></div>
+    </div>`;
+  }).join('');
 }
 
 // ---------- calendar ----------

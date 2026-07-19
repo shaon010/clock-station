@@ -13,6 +13,7 @@ const CONFIG_PATH = join(DATA_DIR, 'config.json');
 export const DEFAULT_CONFIG = {
   location: { name: 'Dhaka, Bangladesh', lat: 23.8103, lon: 90.4125 },
   theme: 'midnight',                       // midnight | daylight | focus | warm
+  clockStyle: 'standard',                  // standard | flip | lcd | minimal (clock face look)
   units: { temp: 'c', clock: '12' },       // temp: c|f   clock: 12|24
   fontScale: 1,                            // global size multiplier (0.8–1.4)
 
