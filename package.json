@@ -8,7 +8,8 @@
     "start": "node server/server.js"
   },
   "dependencies": {
-    "adhan": "^4.4.3"
+    "adhan": "^4.4.3",
+    "tz-lookup": "^6.1.25"
   },
   "engines": {
     "node": ">=18"

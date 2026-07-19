@@ -2,6 +2,7 @@
 // Times come from the `adhan` library (no network); Hijri comes from the ICU
 // islamic-umalqura calendar built into Node's Intl.
 import * as adhan from 'adhan';
+import tzlookup from 'tz-lookup';
 
 const METHODS = {
   MuslimWorldLeague: adhan.CalculationMethod.MuslimWorldLeague,
@@ -32,16 +33,28 @@ function buildParams(cfg) {
   return params;
 }
 
-// Local "HH:MM" in the server's timezone (which is the device's timezone).
-function hhmm(date) {
-  return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+// "HH:MM" in the given IANA timezone — must be the *location's* zone, not the
+// server's, since the server (e.g. Render) runs in UTC regardless of where
+// the configured location actually is.
+function hhmm(date, tz) {
+  return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz });
+}
+
+// The calendar date and weekday as seen in `tz`, not the server's local zone.
+function localParts(date, tz) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short'
+  }).formatToParts(date);
+  const get = (t) => parts.find((p) => p.type === t)?.value || '';
+  const dow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(get('weekday'));
+  return { ymd: `${get('year')}-${get('month')}-${get('day')}`, dow };
 }
 
 // Hijri date via ICU, with a manual ± day offset for local moon-sighting.
-export function hijriFor(date, offsetDays = 0) {
+export function hijriFor(date, offsetDays = 0, tz = 'UTC') {
   const shifted = new Date(date.getTime() + offsetDays * 86400000);
   const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
-    day: 'numeric', month: 'long', year: 'numeric'
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: tz
   }).formatToParts(shifted);
   const get = (t) => parts.find((p) => p.type === t)?.value || '';
   return { day: get('day'), month: get('month'), year: get('year') };
@@ -49,19 +62,21 @@ export function hijriFor(date, offsetDays = 0) {
 
 export function computePrayerTimes(cfg, date = new Date()) {
   const coords = new adhan.Coordinates(cfg.location.lat, cfg.location.lon);
+  const tz = tzlookup(cfg.location.lat, cfg.location.lon);
   const params = buildParams(cfg);
   const pt = new adhan.PrayerTimes(coords, date, params);
 
-  const isFriday = date.getDay() === 5;
+  const { ymd, dow } = localParts(date, tz);
+  const isFriday = dow === 5;
   const jumuah = cfg.prayer.jumuah || {};
 
   const timings = {
-    Fajr: hhmm(pt.fajr),
-    Sunrise: hhmm(pt.sunrise),
-    Dhuhr: (isFriday && jumuah.enabled && jumuah.time) ? jumuah.time : hhmm(pt.dhuhr),
-    Asr: hhmm(pt.asr),
-    Maghrib: hhmm(pt.maghrib),
-    Isha: hhmm(pt.isha)
+    Fajr: hhmm(pt.fajr, tz),
+    Sunrise: hhmm(pt.sunrise, tz),
+    Dhuhr: (isFriday && jumuah.enabled && jumuah.time) ? jumuah.time : hhmm(pt.dhuhr, tz),
+    Asr: hhmm(pt.asr, tz),
+    Maghrib: hhmm(pt.maghrib, tz),
+    Isha: hhmm(pt.isha, tz)
   };
 
   // Iqamah times = adhan + per-prayer offset (Sunrise excluded).
@@ -72,12 +87,12 @@ export function computePrayerTimes(cfg, date = new Date()) {
   }
 
   return {
-    date: date.toISOString().slice(0, 10),
+    date: ymd,
     isFriday,
     dhuhrLabel: (isFriday && jumuah.enabled) ? "Jumu'ah" : 'Dhuhr',
     timings,
     iqamah,
-    hijri: hijriFor(date, cfg.prayer.hijriOffset || 0),
+    hijri: hijriFor(date, cfg.prayer.hijriOffset || 0, tz),
     qibla: adhan.Qibla(coords)   // degrees clockwise from true north
   };
 }
