@@ -16,7 +16,8 @@ node server/server.js   →   http://localhost:8080/        (the display / kiosk
   adjustment, iqamah offsets, Jumu'ah handling, Qibla direction.
 - **Adhan audio** auto-plays at each waqt (separate Fajr), per-prayer toggles,
   volume, quiet hours, optional iqamah chime. Drop MP3s in `public/audio/`.
-- **Weather** (Open-Meteo) proxied + cached so a network blip won't blank it.
+- **Weather** (OpenWeatherMap) proxied + cached so a network blip won't blank it.
+  Needs a free API key — see Quick start.
 - **Family calendar** — members, events, yearly repeats, week strip + agenda.
 - **Daily hadith** (Bangla + cited source) from `data/hadith.json`.
 - **Ramadan mode** (Suhoor/Iftar countdown) + special-day banners (Eid, Ashura…).
@@ -28,13 +29,20 @@ node server/server.js   →   http://localhost:8080/        (the display / kiosk
 
 ## Quick start
 
+Weather needs a free [OpenWeatherMap](https://openweathermap.org/api) API key
+(sign-up, no credit card, 1,000,000 calls/month) set as `OPENWEATHER_API_KEY`:
+
 ```
+export OPENWEATHER_API_KEY=your-key-here
 npm install
 npm start
 ```
 
 Open the two URLs it prints. To run it on the tablet at boot and keep the screen
 on, see `scripts/WINDOWS-SETUP.md`.
+
+On Render (or any host), set `OPENWEATHER_API_KEY` in the service's environment
+variables — without it the weather card falls back to "unavailable".
 
 ## Layout
 

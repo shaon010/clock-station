@@ -9,6 +9,20 @@ import { getConfig, updateConfig, replaceConfig, ROOT } from './config.js';
 import { computePrayerTimes, METHOD_KEYS } from './prayer.js';
 import { getWeather } from './weather.js';
 
+// Load .env (if present) so local runs don't need `export` every time —
+// hosts like Render set real env vars directly, so this is a no-op there.
+try {
+  const envFile = await readFile(join(ROOT, '.env'), 'utf8');
+  for (const line of envFile.split('\n')) {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+    if (!match) continue;
+    const [, key, rawValue = ''] = match;
+    if (process.env[key] === undefined) {
+      process.env[key] = rawValue.replace(/^["']|["']$/g, '');
+    }
+  }
+} catch {}
+
 // Some PaaS hosts (Render included) route IPv6 egress that's flaky while
 // IPv4 works fine — undici's fetch can fail outright instead of falling
 // back, so prefer IPv4 resolution for outbound requests everywhere.

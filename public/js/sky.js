@@ -110,8 +110,8 @@
   }
 
   // ---------- palettes ----------
-  // Dark palette (Midnight/Focus/Warm) and a light, airy variant for Daylight so
-  // dark theme text outside the cards stays legible over the sky.
+  // Dark palette (most themes) and a light, airy variant for light-background
+  // themes (Daylight/Paper) so their dark text stays legible over the sky.
   const PAL = {
     night: [[9, 13, 33], [24, 30, 58]],
     dawn:  [[42, 34, 78], [232, 146, 116]],
@@ -124,7 +124,7 @@
     day:   [[126, 178, 226], [206, 228, 246]],
     dusk:  [[172, 150, 176], [246, 190, 160]],
   };
-  const light = () => document.documentElement.dataset.theme === 'daylight';
+  const light = () => ['daylight', 'paper'].includes(document.documentElement.dataset.theme);
 
   function palette(phase) {
     const p = (light() ? PAL_LIGHT : PAL)[phase];

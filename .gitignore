@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Local secrets (API keys) — never commit
+.env
+
 # Runtime-generated data (created by the server on first run)
 data/config.json
 data/weather-cache.json

@@ -368,12 +368,12 @@ async function refreshWeather() {
   renderForecast(w.daily || [], conv);
 }
 
-// 7-day strip: weekday + condition icon + high/low. Uses daytime icons.
+// 5-day strip: weekday + condition icon + high/low. Uses daytime icons.
 function renderForecast(days, conv) {
   const el = $('wx-forecast');
   if (!el) return;
   const todayISO = iso(new Date());
-  el.innerHTML = days.slice(0, 7).map((d) => {
+  el.innerHTML = days.slice(0, 5).map((d) => {
     const dt = new Date(d.date + 'T12:00:00');
     const label = d.date === todayISO ? 'Today'
       : dt.toLocaleDateString(undefined, { weekday: 'short' });
