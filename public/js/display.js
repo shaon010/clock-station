@@ -9,7 +9,8 @@ const KEY = { Fajr: 'fajr', Dhuhr: 'dhuhr', Asr: 'asr', Maghrib: 'maghrib', Isha
 let cfg = null;
 let deviceLoc = null;   // the display device's own geolocation, when available (primary)
 let prayer = null;      // response of /api/prayer-times
-let fired = new Set();  // guards against double-firing adhan within a minute
+let fired = new Set();    // guards against double-firing adhan within a minute
+let pending = new Set();  // in-flight play() attempts, so a slow-loading file doesn't get its src reset every tick
 let soundArmed = false;
 let wakeLock = null;
 
@@ -508,32 +509,37 @@ function checkAdhan(now) {
   if (!prayer || !cfg.adhan?.enabled) return;
   const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const dayTag = now.toISOString().slice(0, 10);
-  if (now.getHours() === 0 && now.getMinutes() === 0) fired.clear();
+  if (now.getHours() === 0 && now.getMinutes() === 0) { fired.clear(); pending.clear(); }
 
   for (const name of PRAYERS) {
     // adhan at prayer time
     if (prayer.timings[name] === hhmm) {
       const fkey = `${dayTag}:${name}:adhan`;
-      if (!fired.has(fkey) && cfg.adhan.perPrayer?.[KEY[name]] !== false && !inQuiet(now)) {
+      if (!fired.has(fkey) && !pending.has(fkey) && cfg.adhan.perPrayer?.[KEY[name]] !== false && !inQuiet(now)) {
         // Only mark as fired once playback actually starts — if the browser
         // blocks it (autoplay policy, no user gesture yet), leave it unmarked
         // so we keep retrying every tick until the user taps the sound-arm
         // overlay, instead of silently losing this adhan for the whole day.
+        // `pending` guards the gap in between: without it, a slow-loading
+        // file would get re-triggered (and its src reset, aborting playback)
+        // on every 1s tick until it happened to finish loading in time.
+        pending.add(fkey);
         const label = name === 'Dhuhr' ? prayer.dhuhrLabel : name;
-        playAdhan(name === 'Fajr', () => fired.add(fkey), label);
+        playAdhan(name === 'Fajr', () => { fired.add(fkey); pending.delete(fkey); }, label, () => pending.delete(fkey));
       }
     }
     // iqamah chime
     if (cfg.adhan.iqamah?.chimeEnabled && prayer.iqamah[name] === hhmm) {
       const fkey = `${dayTag}:${name}:iqamah`;
-      if (!fired.has(fkey) && cfg.adhan.perPrayer?.[KEY[name]] !== false && !inQuiet(now)) {
-        playIqamah(() => fired.add(fkey));
+      if (!fired.has(fkey) && !pending.has(fkey) && cfg.adhan.perPrayer?.[KEY[name]] !== false && !inQuiet(now)) {
+        pending.add(fkey);
+        playIqamah(() => { fired.add(fkey); pending.delete(fkey); }, () => pending.delete(fkey));
       }
     }
   }
 }
 
-function playAdhan(isFajr, onPlaying, label) {
+function playAdhan(isFajr, onPlaying, label, onSettled) {
   const name = label || (isFajr ? 'Fajr' : '');
   const muezzin = cfg.adhan?.muezzin || 'mishary';
   const el = $('audio-adhan');
@@ -542,14 +548,15 @@ function playAdhan(isFajr, onPlaying, label) {
   el.volume = cfg.adhan?.volume ?? 0.85;
   const started = () => { showAdhanOverlay(name); if (onPlaying) onPlaying(); };
   play(el, started, () => { // if fajr file 404s, fall back to the regular adhan
-    if (isFajr) { el.src = `/audio/${muezzin}.mp3`; play(el, started); }
+    if (isFajr) { el.src = `/audio/${muezzin}.mp3`; play(el, started, onSettled); }
+    else if (onSettled) onSettled();
   });
 }
-function playIqamah(onPlaying) {
+function playIqamah(onPlaying, onSettled) {
   const el = $('audio-iqamah');
   el.src = '/audio/iqamah.mp3';
   el.volume = cfg.adhan?.volume ?? 0.85;
-  play(el, onPlaying);
+  play(el, onPlaying, onSettled);
 }
 function play(el, onPlaying, onError) {
   const p = el.play();
