@@ -39,7 +39,7 @@ export const DEFAULT_CONFIG = {
 
   dimming: {
     level: 0,                              // 0 (bright) – 0.8 (dark) manual overlay
-    autoNight: { enabled: false, start: '22:00', end: '05:30', level: 0.55 }
+    autoNight: { enabled: true, start: '23:00', end: '07:00', level: 1 } // 1 = screen goes fully black
   },
 
   keepAwake: true,
