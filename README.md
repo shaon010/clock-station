@@ -26,6 +26,11 @@ node server/server.js   →   http://localhost:8080/        (the display / kiosk
   (canvas; respects reduced-motion and pauses when hidden).
 - **4 themes** (Midnight/Daylight/Focus/Warm), font scaling, dimming + auto
   night-dim, keep-awake, instant sync (SSE), backup/restore, on-screen LAN URL.
+- **Real backlight dimming**, not just a dark overlay — the server drives the
+  tablet's actual screen brightness to match (Windows via WMI, Linux via
+  `/sys/class/backlight`), so night-dim genuinely saves power. Best-effort:
+  silently falls back to the overlay alone on devices/panels that don't
+  expose brightness control.
 
 ## Quick start
 

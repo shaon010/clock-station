@@ -8,6 +8,7 @@ import { setDefaultResultOrder } from 'node:dns';
 import { getConfig, updateConfig, replaceConfig, ROOT } from './config.js';
 import { computePrayerTimes, METHOD_KEYS } from './prayer.js';
 import { getWeather } from './weather.js';
+import { setBrightness } from './brightness.js';
 
 // Load .env (if present) so local runs don't need `export` every time —
 // hosts like Render set real env vars directly, so this is a no-op there.
@@ -148,6 +149,15 @@ const server = createServer(async (req, res) => {
     if (path === '/api/backup' && method === 'PUT') {
       const cfg = await replaceConfig(await readBody(req));
       broadcast('config-changed'); return sendJSON(res, cfg);
+    }
+
+    // Best-effort hardware backlight control so dimming saves real power, not
+    // just a visual overlay. Fire-and-forget: the display doesn't need to wait
+    // on a PowerShell/sysfs round trip, and unsupported devices no-op silently.
+    if (path === '/api/brightness' && method === 'POST') {
+      const { level } = await readBody(req);
+      if (Number.isFinite(level)) setBrightness((1 - level) * 100);
+      return sendJSON(res, { ok: true });
     }
 
     if (path === '/api/events' && method === 'POST') {

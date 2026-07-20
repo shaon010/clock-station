@@ -190,12 +190,20 @@ async function refreshConfig() {
   renderCalendar();
 }
 
+let lastBrightnessLevel = null;
 function applyDimming() {
   const d = cfg.dimming || {};
   let level = d.level || 0;
   const an = d.autoNight;
   if (an?.enabled && inWindow(an.start, an.end)) level = Math.max(level, an.level || 0.5);
   $('dim-overlay').style.opacity = String(level);
+  if (level !== lastBrightnessLevel) {
+    lastBrightnessLevel = level;
+    // Best-effort hardware backlight match — no-ops on devices that don't support it.
+    fetch('/api/brightness', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level })
+    }).catch(() => {});
+  }
 }
 
 // ---------- master 1s tick ----------
