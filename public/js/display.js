@@ -191,6 +191,7 @@ function drawClock(now) {
     el.innerHTML = '';
     el._flip = null;
   }
+  el.classList.toggle('has-seconds', !!cfg?.units?.showSeconds);
   if (style === 'flip' || style === 'flip-white') renderFlipClock(el, main, ap);
   else renderPlainClock(el, main, ap, style);
 

@@ -119,6 +119,11 @@ body {
 
 /* Flip: split-flap paper cards, one per digit, that fold on each change. */
 .clock[data-style="flip"], .clock[data-style="flip-white"] { display: flex; align-items: center; justify-content: center; gap: 0.07em; }
+/* Seconds add 3 more fixed-width cards (~60% wider); the base font-size (22cqw)
+   was tuned for HH:MM and overflows the hero card at that width, so shrink it
+   specifically for flip when seconds are on. Other styles are plain text and
+   have enough slack in their glyph widths not to need this. */
+.clock[data-style="flip"].has-seconds, .clock[data-style="flip-white"].has-seconds { font-size: min(44cqh, 14cqw); }
 .flip-colon { padding: 0 0.06em; color: var(--text-dim); }
 .flip-ampm {
   font-size: 0.26em; margin-left: 0.35em; align-self: flex-start; margin-top: 0.4em;
