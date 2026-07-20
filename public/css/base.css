@@ -117,7 +117,7 @@ body {
 }
 
 /* Flip: split-flap paper cards, one per digit, that fold on each change. */
-.clock[data-style="flip"] { display: flex; align-items: center; justify-content: center; gap: 0.07em; }
+.clock[data-style="flip"], .clock[data-style="flip-white"] { display: flex; align-items: center; justify-content: center; gap: 0.07em; }
 .flip-colon { padding: 0 0.06em; color: var(--text-dim); }
 .flip-ampm {
   font-size: 0.26em; margin-left: 0.35em; align-self: flex-start; margin-top: 0.4em;
@@ -146,6 +146,48 @@ body {
 .flip-anim .flap-bottom { animation: flapUp 0.25s ease-out 0.25s forwards; }
 @keyframes flapDown { from { transform: rotateX(0); } to { transform: rotateX(-90deg); } }
 @keyframes flapUp { from { transform: rotateX(90deg); } to { transform: rotateX(0); } }
+
+/* Flip (white): same split-flap mechanics, cream cards on a light board. */
+.clock[data-style="flip-white"] .fd {
+  background: #f7f7f9; color: #1b1e26;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1);
+}
+.clock[data-style="flip-white"] .flip-digit::after { border-top-color: rgba(0,0,0,0.16); }
+
+/* Neon: glowing sign — layered text-shadow bloom in the theme's accent color,
+   with a slow flicker so it reads as lit tubing rather than flat color.
+   Needs a dark backdrop to read (a neon sign in daylight is invisible), so the
+   hero card forces one regardless of the active theme. */
+.hero:has(.clock[data-style="neon"]) { background: #06070b; }
+.hero:has(.clock[data-style="neon"]) .datebar .greg { color: #e8edf2; }
+.clock[data-style="neon"] {
+  --neon: var(--accent);
+  color: #fff; font-weight: 700; letter-spacing: 0.02em;
+  text-shadow:
+    0 0 0.04em #fff, 0 0 0.12em #fff,
+    0 0 0.3em var(--neon), 0 0 0.6em var(--neon),
+    0 0 1.2em var(--neon), 0 0 2em var(--neon);
+  animation: neonFlicker 5s infinite ease-in-out;
+}
+.clock[data-style="neon"] .ampm { color: #fff; text-shadow: inherit; opacity: 0.9; }
+@keyframes neonFlicker {
+  0%, 2%, 4%, 100% { opacity: 1; }
+  3% { opacity: 0.85; }
+}
+
+/* Aurora: numerals filled with a slow-shifting cool gradient. */
+.clock[data-style="aurora"] {
+  font-weight: 700;
+  background: linear-gradient(120deg, #6dd5fa, #a663f2, #ff6ec7, #6dd5fa);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: auroraShift 10s linear infinite;
+}
+.clock[data-style="aurora"] .ampm {
+  background: inherit; -webkit-background-clip: text; background-clip: text;
+  color: transparent; opacity: 0.85;
+}
+@keyframes auroraShift { to { background-position: 300% 0; } }
 
 /* ---------- next-prayer bar (top of the prayer card) ---------- */
 /* flex:1 so the card grows to fill the rest of the left column height. The

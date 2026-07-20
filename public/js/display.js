@@ -190,7 +190,7 @@ function drawClock(now) {
     el.innerHTML = '';
     el._flip = null;
   }
-  if (style === 'flip') renderFlipClock(el, main, ap);
+  if (style === 'flip' || style === 'flip-white') renderFlipClock(el, main, ap);
   else renderPlainClock(el, main, ap, style);
 
   $('greg').textContent = now.toLocaleDateString(undefined,
