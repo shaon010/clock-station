@@ -19,6 +19,7 @@ init();
 async function init() {
   window.Sky?.init($('sky'));   // animated weather/day-night background
   await refreshConfig();
+  preloadAdhanAudio();
   await Promise.all([refreshPrayer(), refreshWeather(), refreshHadith(), loadNetInfo()]);
   initDeviceLocation();   // async: switches to device location once permitted
   tick();
@@ -505,6 +506,22 @@ function updateNextPrayer(now) {
 }
 
 // ---------- adhan scheduler ----------
+// Warm the browser's cache for today's adhan/iqamah files ahead of time, so
+// the actual play() at prayer time hits a cached file instead of racing a
+// fresh network fetch (which is when a slow/flaky connection can make play()
+// resolve — "not blocked by autoplay" — before any audio has really loaded,
+// producing the overlay with no sound). Only 2-3 distinct files matter for a
+// whole day, so this is cheap to redo whenever the muezzin/config changes.
+function preloadAdhanAudio() {
+  const muezzin = cfg.adhan?.muezzin || 'mishary';
+  for (const src of [`/audio/${muezzin}.mp3`, `/audio/${muezzin}-fajr.mp3`, '/audio/iqamah.mp3']) {
+    const a = new Audio();
+    a.preload = 'auto';
+    a.src = src;
+    a.load();
+  }
+}
+
 function checkAdhan(now) {
   if (!prayer || !cfg.adhan?.enabled) return;
   const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -737,7 +754,8 @@ async function loadNetInfo() {
 function setupSSE() {
   const es = new EventSource('/events');
   es.addEventListener('config-changed', async () => {
-    await refreshConfig(); await Promise.all([refreshPrayer(), refreshWeather(), refreshHadith()]);
+    await refreshConfig(); preloadAdhanAudio();
+    await Promise.all([refreshPrayer(), refreshWeather(), refreshHadith()]);
   });
   es.addEventListener('test-adhan', (e) => {
     try { const d = JSON.parse(e.data || '{}'); playAdhan(d.which === 'fajr'); } catch { playAdhan(false); }

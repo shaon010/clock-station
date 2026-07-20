@@ -82,7 +82,14 @@ async function serveStatic(res, urlPath) {
   if (!filePath.startsWith(PUBLIC)) { res.writeHead(403); return res.end(); }
   try {
     const buf = await readFile(filePath);
-    res.writeHead(200, { 'Content-Type': MIME[extname(filePath)] || 'application/octet-stream' });
+    const headers = { 'Content-Type': MIME[extname(filePath)] || 'application/octet-stream' };
+    // Audio files are served with no validators (no ETag/Last-Modified), so
+    // without an explicit freshness lifetime the browser re-fetches them over
+    // the network on every single play() — right when a slow/flaky fetch is
+    // most likely to make automatic adhan playback silently fail. They're
+    // static assets that rarely change, so let the browser cache them.
+    if (extname(filePath) === '.mp3') headers['Cache-Control'] = 'public, max-age=86400';
+    res.writeHead(200, headers);
     res.end(buf);
   } catch {
     res.writeHead(404); res.end('Not found');
