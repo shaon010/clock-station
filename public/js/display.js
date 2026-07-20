@@ -514,7 +514,9 @@ function updateNextPrayer(now) {
 // whole day, so this is cheap to redo whenever the muezzin/config changes.
 function preloadAdhanAudio() {
   const muezzin = cfg.adhan?.muezzin || 'mishary';
-  for (const src of [`/audio/${muezzin}.mp3`, `/audio/${muezzin}-fajr.mp3`, '/audio/iqamah.mp3']) {
+  const srcs = [`/audio/${muezzin}.mp3`, `/audio/${muezzin}-fajr.mp3`];
+  if (cfg.adhan?.iqamah?.chimeEnabled) srcs.push('/audio/iqamah.mp3');
+  for (const src of srcs) {
     const a = new Audio();
     a.preload = 'auto';
     a.src = src;
