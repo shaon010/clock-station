@@ -14,7 +14,7 @@ export const DEFAULT_CONFIG = {
   location: { name: 'Dhaka, Bangladesh', lat: 23.8103, lon: 90.4125, auto: true },
   theme: 'midnight',                       // midnight | daylight | focus | warm | nord | forest | sunset | mono | paper
   clockStyle: 'standard',                  // standard | flip | flip-white | lcd | minimal | neon | aurora (clock face look)
-  units: { temp: 'c', clock: '12' },       // temp: c|f   clock: 12|24
+  units: { temp: 'c', clock: '12', showSeconds: false }, // temp: c|f   clock: 12|24
   fontScale: 1,                            // global size multiplier (0.8–1.4)
 
   prayer: {

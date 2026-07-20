@@ -171,14 +171,15 @@ function tick() {
   if (now.getSeconds() === 0) applyDimming(); // re-evaluate night dim each minute
 }
 
-// Split the current time into the digits string ("12:45") and meridiem ("PM"/"").
+// Split the current time into the digits string ("12:45:09") and meridiem ("PM"/"").
 function clockParts(now) {
   const m = String(now.getMinutes()).padStart(2, '0');
+  const s = cfg?.units?.showSeconds ? `:${String(now.getSeconds()).padStart(2, '0')}` : '';
   let h = now.getHours();
-  if ((cfg?.units?.clock || '12') === '24') return { main: `${String(h).padStart(2, '0')}:${m}`, ap: '' };
+  if ((cfg?.units?.clock || '12') === '24') return { main: `${String(h).padStart(2, '0')}:${m}${s}`, ap: '' };
   const ap = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
-  return { main: `${h}:${m}`, ap };
+  return { main: `${h}:${m}${s}`, ap };
 }
 
 function drawClock(now) {
