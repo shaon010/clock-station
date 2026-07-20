@@ -32,8 +32,17 @@ function bindFields() {
       let v = el.type === 'checkbox' ? el.checked : el.value;
       if (type === 'number') v = parseFloat(v) || 0;
       await patch(buildNested(path, v));
+      if (path === 'clockStyle') { cfg.clockStyle = v; toggleClockFontRow(); }
     }, el.type === 'range' ? 250 : 0));
   }
+  toggleClockFontRow();
+}
+
+// The neon font picker only means anything when the neon clock style is
+// active — hide it otherwise instead of leaving a dead control on screen.
+function toggleClockFontRow() {
+  const row = $('#row-clock-font');
+  if (row) row.style.display = cfg.clockStyle === 'neon' ? '' : 'none';
 }
 
 async function populateMethods() {

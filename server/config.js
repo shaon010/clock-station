@@ -16,6 +16,7 @@ export const DEFAULT_CONFIG = {
   clockStyle: 'standard',                  // standard | flip | flip-white | lcd | minimal | neon | aurora (clock face look)
   clockColor: 'default',                   // default | accent | red | green | blue | amber | white | cyan | purple | pink
                                             // (applies to flip/neon/lcd only — "default" leaves each style's own look untouched)
+  clockFont: 'monoton',                    // monoton | neonderthaw | wallpoet | fasterone (neon style only)
   units: { temp: 'c', clock: '12', showSeconds: true }, // temp: c|f   clock: 12|24
   fontScale: 1,                            // global size multiplier (0.8–1.4)
 

@@ -98,7 +98,9 @@ body {
    it doesn't eat into the width budget the digits are sized against. Anchored
    to .hero (not .app) and sat next to the date row, where it reads clearly
    instead of fading into the top corner of the whole page. */
-.hero { position: relative; }
+/* overflow:hidden keeps glow effects (neon, LCD segment bloom) clipped to the
+   card's rounded edges instead of bleeding out over whatever sits behind it. */
+.hero { position: relative; overflow: hidden; }
 .ampm-badge {
   position: absolute; bottom: 1.6rem; right: 1.5rem;
   font-family: var(--font-body); font-weight: 700; font-size: 2.2rem;
@@ -223,15 +225,77 @@ body {
    recalc on the hero (and its neighbor, the hadith card) once a second. */
 :root[data-clock-style="neon"] .hero { background: #06070b; }
 :root[data-clock-style="neon"] .datebar .greg { color: #e8edf2; }
+/* Monoton: a single-weight, single-line display face built for exactly this
+   — its strokes read as neon tubing even with no glow at all, so the
+   text-shadow bloom below is reinforcing the letterform instead of doing
+   all the work. Self-hosted (public/fonts) rather than linked from Google
+   Fonts, matching this app's offline-first rule (see top of themes.css) —
+   only the Latin subset (digits, colon) is kept, ~16KB. */
+@font-face {
+  font-family: "Monoton";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/monoton-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+2000-206F;
+}
+/* Three more neon-sign faces, same self-hosted/offline-first treatment as
+   Monoton above but subset to just the glyphs the clock ever renders
+   (digits + colon) via Google's `text=` subsetting param, so each file is a
+   few KB. Picked for variety of "neon tube" reads: a cursive script sign,
+   a blocky sci-fi/LED face, and a streaked retro-diner face. Selected in
+   Settings (clockFont) only when clockStyle is "neon" — see
+   :root[data-clock-font] below. */
+@font-face {
+  font-family: "Neonderthaw";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/neonderthaw-latin.woff2") format("woff2");
+  unicode-range: U+30-3A;
+}
+@font-face {
+  font-family: "Wallpoet";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/wallpoet-latin.woff2") format("woff2");
+  unicode-range: U+30-3A;
+}
+@font-face {
+  font-family: "Faster One";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/fasterone-latin.woff2") format("woff2");
+  unicode-range: U+30-3A;
+}
+
+/* Colored glass, not a white bulb with a color halo: the digits themselves
+   are painted in --neon (like a real tube's own gas color), with a tiny
+   near-white kernel right at the glass for that hot-filament glint, then
+   the actual colored bloom stepping out from there. Swapping --clock-color
+   (see themes.css) now visibly recolors the sign itself, not just a faint
+   tint — matching how a colored neon tube actually reads. Monoton only
+   ships weight 400, so font-weight is left at normal rather than inheriting
+   the theme's --display-weight (which would just trigger a synthetic
+   faux-bold and blur the strokes). */
 .clock[data-style="neon"] {
   --neon: var(--clock-color, var(--accent));
-  color: #fff; font-weight: 700; letter-spacing: 0.02em;
+  font-family: var(--neon-font, "Monoton"), var(--font-display);
+  color: var(--neon); font-weight: 400; letter-spacing: 0.04em;
   text-shadow:
-    0 0 0.04em #fff, 0 0 0.12em #fff,
-    0 0 0.3em var(--neon), 0 0 0.6em var(--neon),
-    0 0 1.2em var(--neon), 0 0 2em var(--neon);
+    0 0 0.02em #fff, 0 0 0.06em #fff,
+    0 0 0.15em var(--neon), 0 0 0.35em var(--neon),
+    0 0 0.7em var(--neon), 0 0 1.3em var(--neon), 0 0 2.2em var(--neon);
   animation: neonFlicker 5s infinite ease-in-out;
 }
+/* clockFont picker (Settings, only shown for the neon style) — "monoton" is
+   the default and deliberately defines nothing here so var(--neon-font,
+   "Monoton") above resolves to the original face without adding a rule. */
+:root[data-clock-font="neonderthaw"] { --neon-font: "Neonderthaw"; }
+:root[data-clock-font="wallpoet"]    { --neon-font: "Wallpoet"; }
+:root[data-clock-font="fasterone"]   { --neon-font: "Faster One"; }
 @keyframes neonFlicker {
   0%, 2%, 4%, 100% { opacity: 1; }
   3% { opacity: 0.85; }

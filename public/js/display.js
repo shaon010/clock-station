@@ -156,6 +156,7 @@ async function refreshConfig() {
   document.documentElement.dataset.theme = cfg.theme || 'midnight';
   document.documentElement.dataset.clockStyle = cfg.clockStyle || 'standard';
   document.documentElement.dataset.clockColor = cfg.clockColor || 'default';
+  document.documentElement.dataset.clockFont = cfg.clockFont || 'monoton';
   document.documentElement.style.fontSize = (16 * (cfg.fontScale || 1)) + 'px';
   if (cfg.location?.auto === false) deviceLoc = null;   // manual location wins over any stale GPS fix
   $('loc').textContent = deviceLoc?.name || cfg.location?.name || '';
@@ -348,7 +349,15 @@ function inkFillScale(clock, fontPx, availW, availH) {
   const canvas = inkFillScale._canvas || (inkFillScale._canvas = document.createElement('canvas'));
   const ctx = canvas.getContext('2d');
   ctx.font = `${cs.fontWeight} ${fontPx}px ${cs.fontFamily}`;
-  const m = ctx.measureText(text);
+  // Canvas measureText doesn't honor font-variant-numeric: tabular-nums, so a
+  // proportional font (most neon/display faces) can measure some digits
+  // narrower/shorter than others even though every digit occupies the same
+  // rendered box on screen. Measuring the literal current text would then
+  // upscale based on today's digits and clip later when a wider one (e.g. an
+  // "8") rotates in — worst case "88:88:88". Substitute every digit with '8',
+  // the widest/tallest glyph in virtually every numeral set, so the scale is
+  // safe for any time, not just the one currently on screen.
+  const m = ctx.measureText(text.replace(/\d/g, '8'));
   const inkW = (m.actualBoundingBoxLeft || 0) + (m.actualBoundingBoxRight ?? m.width);
   const inkH = (m.actualBoundingBoxAscent || 0) + (m.actualBoundingBoxDescent || 0);
   if (!(inkW > 0) || !(inkH > 0)) return 1;
