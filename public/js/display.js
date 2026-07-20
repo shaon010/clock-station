@@ -95,6 +95,17 @@ function fitToScreen() {
 function setupFitToScreen() {
   fitToScreen();
   window.addEventListener('resize', fitToScreen);
+  // The very first fitToScreen() above can run before a custom clock webfont
+  // (e.g. a neon clockFont) has finished loading — canvas measureText() falls
+  // back to a generic font for width until the real one is ready, so the
+  // clock's real (wider) glyphs weren't accounted for. That undersized
+  // measurement lets the root font-size come out too large, and once the
+  // font swaps in, only the hero card resizes (see the ResizeObserver
+  // below), which re-fits the clock alone, not the root font-size — so the
+  // rest of the dock, including the right column, is left oversized and
+  // clipped by the screen edge. Re-running the full fit once every font is
+  // confirmed loaded recomputes the root size against real metrics.
+  if (document.fonts) document.fonts.ready.then(() => { if (!_fitting) fitToScreen(); });
   const app = document.querySelector('.app');
   if (app && 'ResizeObserver' in window) {
     // Re-fit when real content changes size. The _fitting guard stops our own
@@ -330,7 +341,31 @@ function fitHeroClock() {
   const availW = hero.clientWidth - padX;
   const dateH = datebar ? datebar.getBoundingClientRect().height : 0;
   const availH = hero.clientHeight - padY - gap - dateH;
-  const cw = clock.scrollWidth;
+
+  // For plain-text styles (standard/minimal/neon/aurora), .clock is a plain
+  // block element, so it always fills its container's width regardless of
+  // what the text inside actually needs — clock.scrollWidth just reports
+  // that container width back (masking the real need whenever the text
+  // happens to fit inside it), not the text's true natural width. That blinds
+  // this box-fit step to width entirely for most fonts, sizing purely by
+  // height — harmless for a font whose glyphs are roughly as wide as they
+  // are tall, but for a font that's simply wider per character at a given
+  // height (neon's Wallpoet/Faster One, vs. the default Monoton), the
+  // height-only size then overflows the card horizontally once rendered.
+  // Measure the actual worst-case text width with canvas instead — flip/lcd
+  // build fixed-width per-digit DOM rather than plain text, so their
+  // scrollWidth is already accurate and doesn't need this.
+  let cw;
+  if (clock.children.length) {
+    cw = clock.scrollWidth;
+  } else {
+    const csRef = getComputedStyle(clock);
+    const canvas = fitHeroClock._canvas || (fitHeroClock._canvas = document.createElement('canvas'));
+    const ctx = canvas.getContext('2d');
+    ctx.font = `${csRef.fontWeight} ${CLOCK_FIT_REF}px ${csRef.fontFamily}`;
+    const wd = widestClockDigit(ctx);
+    cw = measureClockTextWidth(ctx, csRef, clock.textContent.replace(/\d/g, wd));
+  }
   const ch = clock.scrollHeight;
   let scale = 1;
   if (cw > 0 && ch > 0 && availW > 0 && availH > 0) scale = Math.min(availW / cw, availH / ch);
@@ -346,9 +381,49 @@ function fitHeroClock() {
   // bigger at the "same" size. Recover that gap with a transform: it repaints
   // the ink larger without changing the box transform doesn't touch layout,
   // so it can never feed back into the ResizeObservers that sized the box.
-  clock.style.transform = ['flip', 'flip-white', 'lcd'].includes(clock.dataset.style)
-    ? '' : `scale(${inkFillScale(clock, fontPx, availW, availH)})`;
+  //
+  // Wallpoet and Faster One (the neon clockFont picker's other two faces)
+  // don't fit this safely: they're proportional fonts with a much wider
+  // ink-to-height ratio than Monoton, so the enlargement this computes for
+  // one moment's hero size can still overflow the card once the outer
+  // fitToScreen loop — which this transform is deliberately built to never
+  // feed back into — settles to a slightly different size a moment later.
+  // Rather than chase that per-font, just skip the enlargement for them, same
+  // as flip/lcd: a slightly smaller clock, never one clipped by the card.
+  const font = document.documentElement.dataset.clockFont;
+  const skipInkFill = ['flip', 'flip-white', 'lcd'].includes(clock.dataset.style)
+    || (clock.dataset.style === 'neon' && (font === 'wallpoet' || font === 'fasterone'));
+  clock.style.transform = skipInkFill ? '' : `scale(${inkFillScale(clock, fontPx, availW, availH)})`;
   requestAnimationFrame(() => { _fittingClock = false; });
+}
+
+// Which digit (0-9) actually needs the most horizontal room in a given,
+// already-sized canvas font — the stand-in used for "worst case" width
+// instead of assuming '8' is always the widest. That assumption holds for
+// most numeral sets but not all of the neon faces (Wallpoet's "5" and "2",
+// e.g., are both wider than its "8"), and substituting the wrong stand-in
+// silently under-measures the worst case, so a real second later a
+// genuinely wider digit rotates in and overflows the card.
+function widestClockDigit(ctx) {
+  let best = '8', bestW = -1;
+  for (const d of '0123456789') {
+    const w = ctx.measureText(d).width;
+    if (w > bestW) { bestW = w; best = d; }
+  }
+  return best;
+}
+
+// True on-screen text width for the clock's plain-text styles: canvas
+// measureText() only measures glyph advances, not the CSS letter-spacing
+// the neon style adds between every character. Leaving that out
+// under-measures the real rendered width by a few dozen px at clock sizes —
+// enough on its own to tip a proportional neon font (Wallpoet, Faster One)
+// into overflowing the card once it compounds with uneven digit widths.
+function measureClockTextWidth(ctx, cs, text) {
+  const m = ctx.measureText(text);
+  const inkW = (m.actualBoundingBoxLeft || 0) + (m.actualBoundingBoxRight ?? m.width);
+  const letterSpacing = parseFloat(cs.letterSpacing) || 0;
+  return inkW + Math.max(0, text.length - 1) * letterSpacing;
 }
 
 // How much bigger the clock's actual glyph ink can be drawn (via transform,
@@ -365,12 +440,12 @@ function inkFillScale(clock, fontPx, availW, availH) {
   // proportional font (most neon/display faces) can measure some digits
   // narrower/shorter than others even though every digit occupies the same
   // rendered box on screen. Measuring the literal current text would then
-  // upscale based on today's digits and clip later when a wider one (e.g. an
-  // "8") rotates in — worst case "88:88:88". Substitute every digit with '8',
-  // the widest/tallest glyph in virtually every numeral set, so the scale is
-  // safe for any time, not just the one currently on screen.
-  const m = ctx.measureText(text.replace(/\d/g, '8'));
-  const inkW = (m.actualBoundingBoxLeft || 0) + (m.actualBoundingBoxRight ?? m.width);
+  // upscale based on today's digits and clip later when a wider one rotates
+  // in — worst case "xx:xx:xx" using whichever digit is this font's widest.
+  const wd = widestClockDigit(ctx);
+  const sub = text.replace(/\d/g, wd);
+  const inkW = measureClockTextWidth(ctx, cs, sub);
+  const m = ctx.measureText(sub);
   const inkH = (m.actualBoundingBoxAscent || 0) + (m.actualBoundingBoxDescent || 0);
   if (!(inkW > 0) || !(inkH > 0)) return 1;
   // 0.94 safety margin: the ink isn't perfectly centered in its box (digits
