@@ -31,6 +31,9 @@ async function init() {
   // Arm audio on any user tap (covers the autoplay-blocked fallback overlay).
   $('sound-arm').addEventListener('click', armSound);
   document.body.addEventListener('click', () => { if (!soundArmed) armSound(); }, { once: true });
+  // "Now playing" overlay closes itself when the adhan finishes, or on tap.
+  $('audio-adhan').addEventListener('ended', hideAdhanOverlay);
+  $('adhan-stop').addEventListener('click', stopAdhan);
   setupFullscreenToggle();
 }
 
@@ -152,6 +155,7 @@ async function refreshConfig() {
   cfg = await fetchJSON('/api/config');
   document.documentElement.dataset.theme = cfg.theme || 'midnight';
   document.documentElement.dataset.clockStyle = cfg.clockStyle || 'standard';
+  document.documentElement.dataset.clockColor = cfg.clockColor || 'default';
   document.documentElement.style.fontSize = (16 * (cfg.fontScale || 1)) + 'px';
   if (cfg.location?.auto === false) deviceLoc = null;   // manual location wins over any stale GPS fix
   $('loc').textContent = deviceLoc?.name || cfg.location?.name || '';
@@ -200,7 +204,8 @@ function drawClock(now) {
   }
   el.classList.toggle('has-seconds', !!cfg?.units?.showSeconds);
   if (style === 'flip' || style === 'flip-white') renderFlipClock(el, main);
-  else renderPlainClock(el, main, style);
+  else if (style === 'lcd') renderSevenSegClock(el, main);
+  else renderPlainClock(el, main);
   $('ampm-badge').textContent = ap;
 
   $('greg').textContent = now.toLocaleDateString(undefined,
@@ -215,12 +220,39 @@ function drawClock(now) {
   }
 }
 
-// standard / minimal / lcd — plain text, LCD adds a faint "all-segments" ghost.
-function renderPlainClock(el, main, style) {
-  const html = style === 'lcd'
-    ? `<span class="lcd"><span class="lcd-ghost" aria-hidden="true">${main.replace(/\d/g, '8')}</span><span class="lcd-live">${main}</span></span>`
-    : main;
-  if (el._html !== html) { el.innerHTML = html; el._html = html; }
+// standard / minimal / neon / aurora — plain text.
+function renderPlainClock(el, main) {
+  if (el._html !== main) { el.innerHTML = main; el._html = main; }
+}
+
+// LCD: real 7-segment digits (segments a–g) + lit colon dots, same physical
+// layout as an actual 7-segment display module — every segment is always
+// present in the DOM, "off" ones just render dim, so the display always shows
+// the classic all-segments ghost behind the live digits for free.
+const SEG_ON = {
+  '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc',
+  '5': 'afgcd', '6': 'afgecd', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg'
+};
+const SEG_LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+
+function renderSevenSegClock(el, main) {
+  const chars = main.split('');
+  const shape = chars.map((c) => (c === ':' ? ':' : 'd')).join('');
+  if (el._seg !== shape) {
+    el._seg = shape;
+    el.innerHTML = chars.map((c) => c === ':'
+      ? '<span class="seg-colon"><i class="seg-dot"></i><i class="seg-dot"></i></span>'
+      : '<span class="seg-digit">' + SEG_LETTERS.map((s) => `<i class="seg seg-${s}"></i>`).join('') + '</span>'
+    ).join('');
+  }
+  const digits = el.querySelectorAll('.seg-digit');
+  let i = 0;
+  for (const c of chars) {
+    if (c === ':') continue;
+    const on = SEG_ON[c] || '';
+    const cell = digits[i++];
+    for (const s of SEG_LETTERS) cell.querySelector('.seg-' + s).classList.toggle('on', on.includes(s));
+  }
 }
 
 // Split-flap "paper" clock: one card per digit, each folds when its value changes.
@@ -276,6 +308,7 @@ function fitHeroClock() {
   const datebar = document.querySelector('.datebar');
   if (!hero || !clock || !clock.children.length && !clock.textContent.trim()) return;
   _fittingClock = true;
+  clock.style.transform = '';   // never let a stale transform skew this measurement pass
   clock.style.fontSize = CLOCK_FIT_REF + 'px';
   const heroStyle = getComputedStyle(hero);
   const padX = parseFloat(heroStyle.paddingLeft) + parseFloat(heroStyle.paddingRight);
@@ -288,8 +321,42 @@ function fitHeroClock() {
   const ch = clock.scrollHeight;
   let scale = 1;
   if (cw > 0 && ch > 0 && availW > 0 && availH > 0) scale = Math.min(availW / cw, availH / ch);
-  clock.style.fontSize = Math.max(8, CLOCK_FIT_REF * scale * 0.99) + 'px';
+  const fontPx = Math.max(8, CLOCK_FIT_REF * scale * 0.99);
+  clock.style.fontSize = fontPx + 'px';
+
+  // Box-fit (above) sizes the clock's *line box* to the card — correct, and
+  // what keeps this whole thing stable (the hero card's own height comes from
+  // that box, so it must always converge to the same value on every pass).
+  // But a line box is mostly invisible padding above/below the actual glyph
+  // ink (numerals only reach ~73% of their line height), so flip/lcd — which
+  // are literal filled shapes with no such padding — end up looking far
+  // bigger at the "same" size. Recover that gap with a transform: it repaints
+  // the ink larger without changing the box transform doesn't touch layout,
+  // so it can never feed back into the ResizeObservers that sized the box.
+  clock.style.transform = ['flip', 'flip-white', 'lcd'].includes(clock.dataset.style)
+    ? '' : `scale(${inkFillScale(clock, fontPx, availW, availH)})`;
   requestAnimationFrame(() => { _fittingClock = false; });
+}
+
+// How much bigger the clock's actual glyph ink can be drawn (via transform,
+// centered on the already-correctly-sized box) before it would spill past
+// the hero card's available width/height. 1 = no room, i.e. no-op.
+function inkFillScale(clock, fontPx, availW, availH) {
+  const text = clock.textContent || '';
+  if (!text.trim()) return 1;
+  const cs = getComputedStyle(clock);
+  const canvas = inkFillScale._canvas || (inkFillScale._canvas = document.createElement('canvas'));
+  const ctx = canvas.getContext('2d');
+  ctx.font = `${cs.fontWeight} ${fontPx}px ${cs.fontFamily}`;
+  const m = ctx.measureText(text);
+  const inkW = (m.actualBoundingBoxLeft || 0) + (m.actualBoundingBoxRight ?? m.width);
+  const inkH = (m.actualBoundingBoxAscent || 0) + (m.actualBoundingBoxDescent || 0);
+  if (!(inkW > 0) || !(inkH > 0)) return 1;
+  // 0.94 safety margin: the ink isn't perfectly centered in its box (digits
+  // sit slightly high, minimal descent), so leave a little breathing room
+  // rather than fitting to the exact theoretical edge.
+  const raw = Math.min(availW / inkW, availH / inkH) * 0.94;
+  return Math.max(1, Math.min(raw, 1.6));
 }
 
 // ---------- prayer times ----------
@@ -312,14 +379,10 @@ function renderPrayerList() {
   $('prayers').innerHTML = order.map((name) => {
     const label = name === 'Dhuhr' ? prayer.dhuhrLabel : name;
     const [at, aap] = splitTime(prayer.timings[name]);
-    const iqRaw = (name === 'Sunrise') ? '' : prayer.iqamah[name];
-    const iq = iqRaw
-      ? `<span class="iqtime tnum"><span class="iqlab">iqamah</span> ${fmt12(iqRaw)}</span>`
-      : `<span class="iqtime iq-none">—</span>`;
     return `<div class="ptile" data-name="${name}">
       <span class="pname">${label}</span>
       <span class="ptime tnum">${at}${aap ? `<span class="ampm">${aap}</span>` : ''}</span>
-      ${iq}</div>`;
+      </div>`;
   }).join('');
 }
 
@@ -334,6 +397,7 @@ function updateNextPrayer(now) {
 
   const remain = next.min - nowMin, hrs = Math.floor(remain / 60), mins = Math.floor(remain % 60);
   $('np-name').textContent = next.name === 'Dhuhr' ? prayer.dhuhrLabel : next.name;
+  $('np-time').textContent = fmt12(t[next.name]);
   $('np-in').textContent = hrs > 0 ? `in ${hrs}h ${mins}m` : `in ${mins}m`;
 
   const span = next.min - prevMin, pct = Math.max(0, Math.min(1, (nowMin - prevMin) / span));
@@ -355,40 +419,48 @@ function checkAdhan(now) {
     if (prayer.timings[name] === hhmm) {
       const fkey = `${dayTag}:${name}:adhan`;
       if (!fired.has(fkey) && cfg.adhan.perPrayer?.[KEY[name]] !== false && !inQuiet(now)) {
-        fired.add(fkey);
-        playAdhan(name === 'Fajr');
+        // Only mark as fired once playback actually starts — if the browser
+        // blocks it (autoplay policy, no user gesture yet), leave it unmarked
+        // so we keep retrying every tick until the user taps the sound-arm
+        // overlay, instead of silently losing this adhan for the whole day.
+        const label = name === 'Dhuhr' ? prayer.dhuhrLabel : name;
+        playAdhan(name === 'Fajr', () => fired.add(fkey), label);
       }
     }
     // iqamah chime
     if (cfg.adhan.iqamah?.chimeEnabled && prayer.iqamah[name] === hhmm) {
       const fkey = `${dayTag}:${name}:iqamah`;
       if (!fired.has(fkey) && cfg.adhan.perPrayer?.[KEY[name]] !== false && !inQuiet(now)) {
-        fired.add(fkey);
-        playIqamah();
+        playIqamah(() => fired.add(fkey));
       }
     }
   }
 }
 
-function playAdhan(isFajr) {
+function playAdhan(isFajr, onPlaying, label) {
+  const name = label || (isFajr ? 'Fajr' : '');
   const muezzin = cfg.adhan?.muezzin || 'mishary';
   const el = $('audio-adhan');
   const src = isFajr ? `/audio/${muezzin}-fajr.mp3` : `/audio/${muezzin}.mp3`;
   el.src = src;
   el.volume = cfg.adhan?.volume ?? 0.85;
-  play(el, () => { // if fajr file 404s, fall back to the regular adhan
-    if (isFajr) { el.src = `/audio/${muezzin}.mp3`; play(el); }
+  const started = () => { showAdhanOverlay(name); if (onPlaying) onPlaying(); };
+  play(el, started, () => { // if fajr file 404s, fall back to the regular adhan
+    if (isFajr) { el.src = `/audio/${muezzin}.mp3`; play(el, started); }
   });
 }
-function playIqamah() {
+function playIqamah(onPlaying) {
   const el = $('audio-iqamah');
   el.src = '/audio/iqamah.mp3';
   el.volume = cfg.adhan?.volume ?? 0.85;
-  play(el);
+  play(el, onPlaying);
 }
-function play(el, onError) {
+function play(el, onPlaying, onError) {
   const p = el.play();
-  if (p?.catch) p.catch(() => { if (!soundArmed) $('sound-arm').classList.add('show'); if (onError) onError(); });
+  if (p?.then) {
+    p.then(() => { if (onPlaying) onPlaying(); })
+      .catch(() => { if (!soundArmed) $('sound-arm').classList.add('show'); if (onError) onError(); });
+  } else if (onPlaying) onPlaying();   // very old browsers: play() returns undefined
 }
 function armSound() {
   soundArmed = true;
@@ -398,6 +470,19 @@ function armSound() {
     const el = $(id); el.muted = true;
     el.play().then(() => { el.pause(); el.currentTime = 0; el.muted = false; }).catch(() => { el.muted = false; });
   }
+}
+
+// ---------- adhan "now playing" overlay ----------
+function showAdhanOverlay(name) {
+  $('adhan-now').textContent = name ? `Playing Adhan: ${name}` : 'Playing Adhan';
+  $('adhan-overlay').classList.add('show');
+}
+function hideAdhanOverlay() { $('adhan-overlay').classList.remove('show'); }
+function stopAdhan() {
+  const el = $('audio-adhan');
+  el.pause();
+  el.currentTime = 0;
+  hideAdhanOverlay();
 }
 
 // ---------- weather ----------

@@ -174,4 +174,20 @@
   --display-weight: 500;
 }
 
+/* ---- clock color presets ---- */
+/* Applies to whichever clock style is active (neon glow, LCD segments, flip
+   casing/numerals) via --clock-color. "default" deliberately defines nothing
+   here, so var(--clock-color, <style's own fallback>) resolves to each
+   style's own natural look — neon falls back to the theme accent, LCD to
+   classic red, flip stays untouched (its rules are gated off entirely). */
+:root[data-clock-color="accent"] { --clock-color: var(--accent); }
+:root[data-clock-color="red"]    { --clock-color: #ff3b30; }
+:root[data-clock-color="green"]  { --clock-color: #2ecc71; }
+:root[data-clock-color="blue"]   { --clock-color: #3b82f6; }
+:root[data-clock-color="amber"]  { --clock-color: #ffb84d; }
+:root[data-clock-color="white"]  { --clock-color: #f5f7fa; }
+:root[data-clock-color="cyan"]   { --clock-color: #22d3ee; }
+:root[data-clock-color="purple"] { --clock-color: #a78bfa; }
+:root[data-clock-color="pink"]   { --clock-color: #ff6fb0; }
+
 ::selection { background: var(--accent); color: var(--bg); }
