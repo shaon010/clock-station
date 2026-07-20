@@ -86,6 +86,13 @@ function setupFitToScreen() {
     // font-size writes from retriggering this into a loop.
     new ResizeObserver(() => { if (!_fitting) fitToScreen(); }).observe(app);
   }
+  const hero = document.querySelector('.hero');
+  if (hero && 'ResizeObserver' in window) {
+    // Re-fit the clock whenever the hero card itself changes size (window
+    // resize, root font-scale change, layout reflow) — not just when the
+    // digit layout changes.
+    new ResizeObserver(() => { if (!_fittingClock) fitHeroClock(); }).observe(hero);
+  }
 }
 
 // ---------- device location (primary) ----------
@@ -192,38 +199,45 @@ function drawClock(now) {
     el._flip = null;
   }
   el.classList.toggle('has-seconds', !!cfg?.units?.showSeconds);
-  if (style === 'flip' || style === 'flip-white') renderFlipClock(el, main, ap);
-  else renderPlainClock(el, main, ap, style);
+  if (style === 'flip' || style === 'flip-white') renderFlipClock(el, main);
+  else renderPlainClock(el, main, style);
+  $('ampm-badge').textContent = ap;
 
   $('greg').textContent = now.toLocaleDateString(undefined,
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Only re-measure when the digit layout actually changed (hour gains/loses a
+  // digit, seconds toggle, style switch) — not on every second's tick.
+  const shapeKey = `${style}|${main.replace(/\d/g, '0')}`;
+  if (shapeKey !== _lastClockShape) {
+    _lastClockShape = shapeKey;
+    fitHeroClock();
+  }
 }
 
 // standard / minimal / lcd — plain text, LCD adds a faint "all-segments" ghost.
-function renderPlainClock(el, main, ap, style) {
-  const apHtml = ap ? `<span class="ampm">${ap}</span>` : '';
+function renderPlainClock(el, main, style) {
   const html = style === 'lcd'
-    ? `<span class="lcd"><span class="lcd-ghost" aria-hidden="true">${main.replace(/\d/g, '8')}</span><span class="lcd-live">${main}</span></span>${apHtml}`
-    : `${main}${apHtml}`;
+    ? `<span class="lcd"><span class="lcd-ghost" aria-hidden="true">${main.replace(/\d/g, '8')}</span><span class="lcd-live">${main}</span></span>`
+    : main;
   if (el._html !== html) { el.innerHTML = html; el._html = html; }
 }
 
 // Split-flap "paper" clock: one card per digit, each folds when its value changes.
-function renderFlipClock(el, main, ap) {
+function renderFlipClock(el, main) {
   const chars = main.split('');
-  const shape = chars.map((c) => (c === ':' ? ':' : 'd')).join('') + (ap ? '+' : '');
+  const shape = chars.map((c) => (c === ':' ? ':' : 'd')).join('');
   if (el._flip !== shape) {   // (re)build only when the digit layout changes
     el._flip = shape;
     el.innerHTML = chars.map((c) => c === ':'
       ? '<span class="flip-colon">:</span>'
       : '<span class="flip-digit"><span class="fd fd-top"></span><span class="fd fd-bottom"></span>'
         + '<span class="fd flap flap-top"></span><span class="fd flap flap-bottom"></span></span>'
-    ).join('') + (ap ? `<span class="flip-ampm">${ap}</span>` : '');
+    ).join('');
   }
   const cells = el.querySelectorAll('.flip-digit');
   let i = 0;
   for (const c of chars) { if (c !== ':') setFlipDigit(cells[i++], c); }
-  if (ap) el.querySelector('.flip-ampm').textContent = ap;
 }
 
 function setFlipDigit(cell, val) {
@@ -242,6 +256,40 @@ function setFlipDigit(cell, val) {
   cell.classList.add('flip-anim');
   clearTimeout(cell._t);
   cell._t = setTimeout(() => { cell.classList.remove('flip-anim'); bottom.textContent = val; }, 520);
+}
+
+// ---------- hero clock: dynamic fit ----------
+// The clock used to be sized by a fixed CSS formula (min(Ncqh, Mcqw)) tuned for
+// a worst-case digit count ("88:88:88"). But the hour isn't zero-padded in
+// 12-hour mode, so most times render one digit narrower than that formula
+// assumed, leaving unused margin on every side. Instead, measure the clock's
+// real rendered box at a reference font-size (tabular-nums means digit *value*
+// never affects width, only digit *count* does, so this scales exactly) and
+// set a font-size that fills the hero card exactly, whatever's on screen.
+let _fittingClock = false;
+let _lastClockShape = null;
+const CLOCK_FIT_REF = 200; // px reference; text scales linearly from here
+
+function fitHeroClock() {
+  const hero = document.querySelector('.hero');
+  const clock = $('clock');
+  const datebar = document.querySelector('.datebar');
+  if (!hero || !clock || !clock.children.length && !clock.textContent.trim()) return;
+  _fittingClock = true;
+  clock.style.fontSize = CLOCK_FIT_REF + 'px';
+  const heroStyle = getComputedStyle(hero);
+  const padX = parseFloat(heroStyle.paddingLeft) + parseFloat(heroStyle.paddingRight);
+  const padY = parseFloat(heroStyle.paddingTop) + parseFloat(heroStyle.paddingBottom);
+  const gap = parseFloat(heroStyle.rowGap || heroStyle.gap) || 0;
+  const availW = hero.clientWidth - padX;
+  const dateH = datebar ? datebar.getBoundingClientRect().height : 0;
+  const availH = hero.clientHeight - padY - gap - dateH;
+  const cw = clock.scrollWidth;
+  const ch = clock.scrollHeight;
+  let scale = 1;
+  if (cw > 0 && ch > 0 && availW > 0 && availH > 0) scale = Math.min(availW / cw, availH / ch);
+  clock.style.fontSize = Math.max(8, CLOCK_FIT_REF * scale * 0.99) + 'px';
+  requestAnimationFrame(() => { _fittingClock = false; });
 }
 
 // ---------- prayer times ----------

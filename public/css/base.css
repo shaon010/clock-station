@@ -61,10 +61,11 @@ body {
 }
 .icon-btn:hover, .icon-btn:focus-visible { color: var(--accent); border-color: var(--accent); background: var(--surface-2); }
 
-/* Even 50/50 split: the right column carries the most content (weather, week,
-   agenda, hadith), so giving it equal width keeps its text at a readable size. */
+/* Left column (clock + prayers) gets 10% extra width so the clock hero can run
+   bigger; the right column (weather, week, agenda, hadith) gives up that 10%
+   but still has enough room to stay readable. */
 .grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+  display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 1.25rem;
 }
 .col { display: flex; flex-direction: column; gap: 1.25rem; }
 @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
@@ -82,22 +83,25 @@ body {
 }
 
 /* ---------- clock hero (half-screen widget, top of the left column) ---------- */
-/* The card grows (flex) to share the column height with the prayer card so the
-   bottom stays flush, and the clock text is sized in container units (cqh/cqw)
-   so it scales up to fill whatever height the card gets — a big clock with just
-   a minimal margin, never any dead space, and never overrunning the width. */
-.hero {
-  flex: 1.25; container-type: size; padding: 0.6rem 1.2rem; text-align: center;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 1.5cqh; overflow: hidden;
-}
+/* The card grows (flex) to share the column height with the hadith card so the
+   bottom stays flush. The clock's real font-size is computed dynamically in JS
+   (fitHeroClock in display.js) by measuring the actual rendered digits and
+   scaling them to exactly fill the card — a fixed worst-case formula ("88:88:88")
+   left visible margins whenever the hour wasn't two digits or seconds were off.
+   The value below is only the pre-JS fallback for the first paint. */
 .clock {
   font-family: var(--font-display); font-weight: var(--display-weight);
   font-size: min(44cqh, 22cqw); line-height: 1; letter-spacing: -0.01em;
 }
-.clock .ampm {
-  font-size: 0.26em; margin-left: 0.45rem; color: var(--text-dim);
-  font-family: var(--font-body); font-weight: 600;
+/* AM/PM lives in its own corner badge instead of inline after the digits, so
+   it doesn't eat into the width budget the digits are sized against. Anchored
+   to .hero (not .app) and sat next to the date row, where it reads clearly
+   instead of fading into the top corner of the whole page. */
+.hero { position: relative; }
+.ampm-badge {
+  position: absolute; bottom: 1.6rem; right: 1.5rem;
+  font-family: var(--font-body); font-weight: 700; font-size: 2.2rem;
+  letter-spacing: 0.08em; color: var(--accent);
 }
 .datebar { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1.6rem; align-items: baseline; }
 .datebar .greg { font-size: min(7cqh, 4.5cqw); }
@@ -106,7 +110,6 @@ body {
 /* ---------- clock styles ---------- */
 /* Minimal: thin, airy numerals. */
 .clock[data-style="minimal"] { font-weight: 200; letter-spacing: 0.04em; }
-.clock[data-style="minimal"] .ampm { font-weight: 300; }
 
 /* LCD: 7-segment digital look — faint "all segments on" ghost behind the live time. */
 .clock[data-style="lcd"] { font-family: var(--font-mono); letter-spacing: 0.03em; }
@@ -119,19 +122,10 @@ body {
 
 /* Flip: split-flap paper cards, one per digit, that fold on each change. */
 .clock[data-style="flip"], .clock[data-style="flip-white"] { display: flex; align-items: center; justify-content: center; gap: 0.07em; }
-/* Seconds add 3 more fixed-width cards (~60% wider); the base font-size (22cqw)
-   was tuned for HH:MM and overflows the hero card at that width, so shrink it
-   specifically for flip when seconds are on. 20cqw is the largest size that
-   still fits the worst case ("88:88:88 PM") without overflowing — since every
-   flip card is a fixed width regardless of which digit it shows, that worst
-   case bounds every possible time. Other styles are plain text and have
-   enough slack in their glyph widths not to need this. */
-.clock[data-style="flip"].has-seconds, .clock[data-style="flip-white"].has-seconds { font-size: min(44cqh, 20cqw); }
+/* Seconds add 3 more fixed-width cards; shrink the pre-JS fallback so the
+   first paint doesn't overflow before fitHeroClock measures and takes over. */
+.clock[data-style="flip"].has-seconds, .clock[data-style="flip-white"].has-seconds { font-size: min(44cqh, 22.35cqw); }
 .flip-colon { padding: 0 0.06em; color: var(--text-dim); }
-.flip-ampm {
-  font-size: 0.26em; margin-left: 0.35em; align-self: flex-start; margin-top: 0.4em;
-  color: var(--text-dim); font-family: var(--font-body); font-weight: 600;
-}
 .flip-digit {
   position: relative; display: inline-block; width: 0.66em; height: 1em;
   perspective: 700px; font-variant-numeric: tabular-nums;
@@ -178,7 +172,6 @@ body {
     0 0 1.2em var(--neon), 0 0 2em var(--neon);
   animation: neonFlicker 5s infinite ease-in-out;
 }
-.clock[data-style="neon"] .ampm { color: #fff; text-shadow: inherit; opacity: 0.9; }
 @keyframes neonFlicker {
   0%, 2%, 4%, 100% { opacity: 1; }
   3% { opacity: 0.85; }
@@ -192,47 +185,46 @@ body {
   -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: auroraShift 10s linear infinite;
 }
-.clock[data-style="aurora"] .ampm {
-  background: inherit; -webkit-background-clip: text; background-clip: text;
-  color: transparent; opacity: 0.85;
-}
 @keyframes auroraShift { to { background-position: 300% 0; } }
 
 /* ---------- next-prayer bar (top of the prayer card) ---------- */
 /* flex:1 so the card grows to fill the rest of the left column height. The
    tiles below keep a natural, readable size (no flex:1 on them) — surplus
    height becomes breathing room via space-between, not oversized tiles. */
-.prayer-card { flex: 1; display: flex; flex-direction: column; gap: 1.1rem; justify-content: space-between; }
+.prayer-card { display: flex; flex-direction: column; gap: 1.1rem; }
 .np-bar {
-  display: flex; align-items: center; gap: 1.1rem;
+  display: flex; align-items: center; gap: 1rem;
   background: var(--accent-soft); border: 1px solid var(--accent-border);
-  border-radius: calc(var(--radius) - 6px); padding: 0.95rem 1.2rem;
+  border-radius: calc(var(--radius) - 6px); padding: 0.75rem 1.1rem;
 }
 .np-info { flex: 1; min-width: 0; }
-.arc-wrap { position: relative; width: 4rem; height: 4rem; flex: none; }
+.arc-wrap { position: relative; width: 3.4rem; height: 3.4rem; flex: none; }
 .arc-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
 .arc-track { fill: none; stroke: var(--track); stroke-width: 6; }
 .arc-fill { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
-.arc-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-family: var(--font-mono); color: var(--accent); }
-.np-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); font-family: var(--font-mono); }
-.np-name { font-family: var(--font-display); font-size: 2.1rem; margin-top: 0.15rem; }
-.np-in { font-family: var(--font-mono); font-size: 1.35rem; color: var(--accent); white-space: nowrap; }
+.arc-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-family: var(--font-mono); color: var(--accent); }
+.np-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); font-family: var(--font-mono); }
+.np-name { font-family: var(--font-display); font-size: 1.7rem; margin-top: 0.1rem; }
+.np-in { font-family: var(--font-mono); font-size: 1.15rem; color: var(--accent); white-space: nowrap; }
 
 /* ---------- prayer tiles (calendar-style row) ---------- */
-.prayer-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.6rem; }
+/* Sized compactly: this now sits as a plain stacked card in the right column
+   rather than height-sharing with the clock hero, so it no longer needs to be
+   tall enough to fill leftover column height. */
+.prayer-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; }
 .ptile {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4rem;
-  text-align: center; padding: 1.3rem 0.4rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem;
+  text-align: center; padding: 0.75rem 0.4rem;
   border-radius: 0.9rem; background: var(--surface-2); border: 1px solid var(--border);
   transition: background 0.3s ease, border-color 0.3s ease;
 }
 .ptile .pname {
-  font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: 0.08em;
+  font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--text-dim); white-space: nowrap;
 }
 .ptile .ptime {
   font-family: var(--font-display); font-weight: var(--display-weight);
-  font-size: clamp(1.6rem, 2.7vw, 2.15rem); line-height: 1; white-space: nowrap;
+  font-size: clamp(1.3rem, 2.1vw, 1.65rem); line-height: 1; white-space: nowrap;
 }
 .ptile .ptime .ampm {
   font-size: 0.42em; margin-left: 0.15em; color: var(--text-dim);
@@ -249,13 +241,17 @@ body {
 @media (max-width: 560px) { .prayer-grid { grid-template-columns: repeat(3, 1fr); } }
 
 /* ---------- weather ---------- */
+/* Condition/place/stats all live in .wx-side, pushed to the right edge with
+   margin-left:auto, so the icon + temp on the left are the only things in
+   that column and can run big and bold with nothing crowding them. */
 .wx-main { display: flex; align-items: center; gap: 1.2rem; }
 .wx-icon { font-size: 2.6rem; line-height: 1; flex: none; }
-.wx-temp { font-family: var(--font-display); font-size: 3.2rem; line-height: 1; }
-.wx-cond { color: var(--text); font-size: 1.1rem; margin-top: 0.15rem; }
-.wx-sub { color: var(--text-dim); font-size: 0.95rem; margin-top: 0.2rem; }
-.wx-stats { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin-top: 1rem; }
-.wx-stat { font-size: 1.05rem; color: var(--text-dim); }
+.wx-temp { font-family: var(--font-display); font-weight: 800; font-size: 3.2rem; line-height: 1; }
+.wx-side { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-left: auto; text-align: left; }
+.wx-cond { color: var(--text); font-size: 1.1rem; }
+.wx-sub { color: var(--text-dim); font-size: 0.95rem; }
+.wx-stats { display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem; }
+.wx-stat { font-size: 1.05rem; color: var(--text-dim); white-space: nowrap; }
 .wx-stat b { color: var(--text); font-weight: 600; font-family: var(--font-mono); }
 
 /* ---------- 5-day forecast strip ---------- */
@@ -284,11 +280,11 @@ body {
 .wx-hero { padding: 2rem 1.9rem; }
 .wx-hero .wx-main { gap: 1.6rem; }
 .wx-hero .wx-icon { font-size: 5.6rem; }
-.wx-hero .wx-temp { font-size: clamp(4.4rem, 7.5vw, 6.8rem); }
-.wx-hero .wx-cond { font-size: 2rem; margin-top: 0.25rem; }
-.wx-hero .wx-sub { font-size: 1.3rem; margin-top: 0.35rem; }
-.wx-hero .wx-stats { margin-top: 1.3rem; gap: 0.5rem 1.8rem; }
-.wx-hero .wx-stat { font-size: 1.4rem; }
+.wx-hero .wx-temp { font-size: clamp(7.5rem, 13vw, 12rem); }
+.wx-hero .wx-cond { font-size: 2rem; }
+.wx-hero .wx-sub { font-size: 1.3rem; }
+.wx-hero .wx-stats { gap: 0.65rem; }
+.wx-hero .wx-stat { font-size: 1.45rem; }
 
 /* ---------- calendar ---------- */
 .week-strip { display: flex; gap: 0.5rem; margin-bottom: 1.1rem; }
@@ -307,11 +303,15 @@ body {
 .empty { color: var(--text-dim); font-size: 1.05rem; padding: 0.4rem 0.25rem; }
 
 /* ---------- hadith ---------- */
+/* Now shares the left column with the clock hero (in the prayer widget's old
+   spot), so it grows to fill the leftover column height instead of sizing to
+   its own content, with the larger type that extra room affords. */
+.hadith-card { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .hadith-card .hadith-text {
-  font-family: var(--font-bengali); font-size: 1.4rem; line-height: 1.85; color: var(--text);
+  font-family: var(--font-bengali); font-size: 1.75rem; line-height: 1.85; color: var(--text);
 }
-.hadith-src { margin-top: 0.9rem; font-size: 0.9rem; color: var(--text-dim); font-family: var(--font-mono); }
-.hadith-chapter { font-family: var(--font-bengali); font-size: 1.15rem; color: var(--accent); margin-bottom: 0.3rem; }
+.hadith-src { margin-top: 0.9rem; font-size: 1rem; color: var(--text-dim); font-family: var(--font-mono); }
+.hadith-chapter { font-family: var(--font-bengali); font-size: 1.4rem; color: var(--accent); margin-bottom: 0.3rem; }
 
 /* ---------- ramadan / special banner ---------- */
 .banner {

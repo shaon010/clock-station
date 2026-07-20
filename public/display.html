@@ -38,13 +38,45 @@
   <div class="grid">
     <!-- LEFT -->
     <div class="col">
-      <!-- CLOCK HERO — half-screen widget, shares the left column with prayers -->
+      <!-- CLOCK HERO — half-screen widget, shares the left column with the hadith card -->
       <div class="card hero">
+        <div class="ampm-badge" id="ampm-badge"></div>
         <div class="clock tnum" id="clock" data-style="standard">--:--</div>
         <div class="datebar">
           <div class="greg" id="greg">—</div>
           <div class="hijri" id="hijri">—</div>
         </div>
+      </div>
+
+      <div class="card hadith-card hide-on-focus" id="hadith-card">
+        <h2 class="section-title">Hadith of the day</h2>
+        <div class="hadith-chapter" id="hadith-chapter"></div>
+        <div class="hadith-text" id="hadith-text">—</div>
+        <div class="hadith-src" id="hadith-src"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col">
+      <div class="card wx-hero">
+        <h2 class="section-title">Weather</h2>
+        <div class="wx-main">
+          <div class="wx-icon" id="wx-icon">—</div>
+          <div class="wx-temp tnum" id="wx-temp">--°</div>
+          <div class="wx-side">
+            <div class="wx-cond" id="wx-cond">Loading…</div>
+            <div class="wx-sub" id="wx-place"></div>
+            <div class="wx-stats" id="wx-stats"></div>
+          </div>
+        </div>
+        <div class="wx-forecast" id="wx-forecast"></div>
+      </div>
+
+      <div class="card hide-on-focus">
+        <h2 class="section-title">This week</h2>
+        <div class="week-strip" id="week"></div>
+        <h2 class="section-title">Upcoming</h2>
+        <div id="agenda"></div>
       </div>
 
       <div class="card prayer-card">
@@ -63,37 +95,6 @@
           <div class="np-in" id="np-in">—</div>
         </div>
         <div class="prayer-grid" id="prayers"></div>
-      </div>
-    </div>
-
-    <!-- RIGHT -->
-    <div class="col">
-      <div class="card wx-hero">
-        <h2 class="section-title">Weather</h2>
-        <div class="wx-main">
-          <div class="wx-icon" id="wx-icon">—</div>
-          <div class="wx-readout">
-            <div class="wx-temp tnum" id="wx-temp">--°</div>
-            <div class="wx-cond" id="wx-cond">Loading…</div>
-            <div class="wx-sub" id="wx-place"></div>
-          </div>
-        </div>
-        <div class="wx-stats" id="wx-stats"></div>
-        <div class="wx-forecast" id="wx-forecast"></div>
-      </div>
-
-      <div class="card hide-on-focus">
-        <h2 class="section-title">This week</h2>
-        <div class="week-strip" id="week"></div>
-        <h2 class="section-title">Upcoming</h2>
-        <div id="agenda"></div>
-      </div>
-
-      <div class="card hadith-card hide-on-focus" id="hadith-card">
-        <h2 class="section-title">Hadith of the day</h2>
-        <div class="hadith-chapter" id="hadith-chapter"></div>
-        <div class="hadith-text" id="hadith-text">—</div>
-        <div class="hadith-src" id="hadith-src"></div>
       </div>
     </div>
   </div>
