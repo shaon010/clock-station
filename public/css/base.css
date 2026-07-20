@@ -44,7 +44,7 @@ body {
 
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 1rem; margin-bottom: 3.55rem;
+  gap: 1rem; margin-bottom: 1.25rem;
 }
 .eyebrow {
   font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.18em;
@@ -56,7 +56,7 @@ body {
   background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem;
   padding: 0.3rem 0.4rem; margin: -0.3rem -0.4rem;
   font-size: 1.25rem; line-height: 1; color: var(--text-dim); opacity: 1;
-  cursor: pointer; display: inline-flex; position: relative; top: 2.3rem; left: 0.4rem;
+  cursor: pointer; display: inline-flex; position: relative; top: 0.8rem; left: 0.4rem;
   transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 .icon-btn:hover, .icon-btn:focus-visible { color: var(--accent); border-color: var(--accent); background: var(--surface-2); }
@@ -114,7 +114,12 @@ body {
   font-family: var(--font-body); font-weight: 700; font-size: 2.2rem;
   letter-spacing: 0.08em; color: var(--accent);
 }
-.datebar { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1.6rem; align-items: baseline; }
+/* margin-top (not a gap on .hero) so the block-stacked clock and date row get
+   real breathing room instead of touching, without turning .hero itself into
+   a flex container — fitHeroClock reads this margin explicitly (see
+   display.js) and shrinks the clock to leave room for it, rather than the
+   date row spilling past the card edge. */
+.datebar { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1.6rem; align-items: baseline; margin-top: 1.5rem; }
 .datebar .greg { font-size: min(7cqh, 4.5cqw); }
 .datebar .hijri { font-size: min(6cqh, 3.8cqw); color: var(--accent); font-family: var(--font-mono); }
 
@@ -456,7 +461,7 @@ body {
 .banner .b-count { margin-left: auto; font-family: var(--font-mono); color: var(--accent); font-size: 1rem; }
 
 /* ---------- footer: QR + settings hint ---------- */
-.footer { display: flex; align-items: center; gap: 1rem; margin-top: 1.75rem; color: var(--text-dim); font-size: 0.75rem; }
+.footer { display: flex; align-items: center; gap: 1rem; margin-top: 0.9rem; color: var(--text-dim); font-size: 0.75rem; }
 .footer .qr { background: #fff; padding: 5px; border-radius: 8px; line-height: 0; }
 .footer code { font-family: var(--font-mono); color: var(--text); }
 

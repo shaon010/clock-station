@@ -339,7 +339,11 @@ function fitHeroClock() {
   const heroStyle = getComputedStyle(hero);
   const padX = parseFloat(heroStyle.paddingLeft) + parseFloat(heroStyle.paddingRight);
   const padY = parseFloat(heroStyle.paddingTop) + parseFloat(heroStyle.paddingBottom);
-  const gap = parseFloat(heroStyle.rowGap || heroStyle.gap) || 0;
+  // .datebar's margin-top (the breathing room between the clock and the date
+  // row) isn't part of its own getBoundingClientRect(), so it has to be read
+  // and subtracted separately here — otherwise the clock gets sized as if
+  // that margin didn't exist and the date row overflows past the card edge.
+  const gap = datebar ? parseFloat(getComputedStyle(datebar).marginTop) || 0 : 0;
   const availW = hero.clientWidth - padX;
   const dateH = datebar ? datebar.getBoundingClientRect().height : 0;
   const availH = hero.clientHeight - padY - gap - dateH;
