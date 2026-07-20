@@ -99,8 +99,16 @@ body {
    to .hero (not .app) and sat next to the date row, where it reads clearly
    instead of fading into the top corner of the whole page. */
 /* overflow:hidden keeps glow effects (neon, LCD segment bloom) clipped to the
-   card's rounded edges instead of bleeding out over whatever sits behind it. */
-.hero { position: relative; overflow: hidden; }
+   card's rounded edges instead of bleeding out over whatever sits behind it.
+   flex: 1.25 (same idea as the hadith card's flex: 1 below) pins the card's
+   own height instead of letting it hug the clock's content — without a fixed
+   height here, fitHeroClock's measurement pass (which briefly sets a huge
+   reference font-size, see display.js) inflates the card itself, which
+   re-fires the ResizeObserver watching it, which measures again... a loop
+   that never settles for proportional display fonts (neon/aurora resize
+   visibly every second) and can leave flip's widest layout ("88:88:88") a
+   few px off after the one resize it does settle to. */
+.hero { position: relative; overflow: hidden; flex: 1.25; }
 .ampm-badge {
   position: absolute; bottom: 1.6rem; right: 1.5rem;
   font-family: var(--font-body); font-weight: 700; font-size: 2.2rem;

@@ -68,15 +68,27 @@ function fitToScreen() {
   _fitting = true;
   let size = base;
   root.style.fontSize = size + 'px';
-  // Two passes converge even though a few elements are fixed-px (SVG icons etc.)
-  // and don't scale perfectly linearly with the font.
-  for (let i = 0; i < 2; i++) {
+  // Each pass shrinks size by whichever of height or width is more over
+  // budget (non-wrapping content, e.g. the flip clock's fixed-width digit
+  // cards, can force .app wider than its own box, not just taller than the
+  // window) and stops as soon as a pass changes nothing. fitHeroClock runs on
+  // every pass, before measuring .app — not just once at the end — because
+  // .app's own height/width depend on the clock's size, so measuring .app
+  // against a stale (pre-fitHeroClock) clock box and only reconciling them
+  // afterwards left the two calls perpetually invalidating each other's
+  // measurement, oscillating between two font-sizes forever instead of
+  // settling on one.
+  for (let i = 0; i < 6; i++) {
+    fitHeroClock();
     const h = app.offsetHeight;
     if (!h) break;
-    size = size * ((window.innerHeight - 2) / h);     // -2px guards against rounding overflow
-    size = Math.max(6, Math.min(size, base * 4));      // never absurdly small or large
+    const ratio = Math.min((window.innerHeight - 2) / h, app.clientWidth / app.scrollWidth);
+    const next = Math.max(6, Math.min(size * ratio, base * 4));
+    if (Math.abs(next - size) < 0.1) { size = next; break; }
+    size = next;
     root.style.fontSize = size + 'px';
   }
+  fitHeroClock();
   requestAnimationFrame(() => { _fitting = false; });
 }
 
@@ -91,10 +103,10 @@ function setupFitToScreen() {
   }
   const hero = document.querySelector('.hero');
   if (hero && 'ResizeObserver' in window) {
-    // Re-fit the clock whenever the hero card itself changes size (window
-    // resize, root font-scale change, layout reflow) — not just when the
-    // digit layout changes.
-    new ResizeObserver(() => { if (!_fittingClock) fitHeroClock(); }).observe(hero);
+    // Re-fit the clock whenever the hero card itself changes size for some
+    // reason other than fitToScreen/fitHeroClock's own writes (which already
+    // fit the clock inline — see above) — e.g. font files finishing load.
+    new ResizeObserver(() => { if (!_fitting && !_fittingClock) fitHeroClock(); }).observe(hero);
   }
 }
 
