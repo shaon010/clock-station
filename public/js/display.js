@@ -41,6 +41,7 @@ async function init() {
   $('audio-adhan').addEventListener('ended', hideAdhanOverlay);
   $('audio-adhan-fajr').addEventListener('ended', hideAdhanOverlay);
   $('adhan-stop').addEventListener('click', stopAdhan);
+  $('battery-dismiss').addEventListener('click', dismissBatteryOverlay);
   setupFullscreenToggle();
 }
 
@@ -851,12 +852,19 @@ function initBattery() {
     update();
   }).catch(() => {});
 }
+let batteryDismissed = false;
 function updateBattery(battery) {
   const pct = Math.round(battery.level * 100);
   const low = pct <= 20, critical = pct <= 10;
   $('battery-glow').classList.toggle('show', low);
   $('battery-glow').classList.toggle('critical', critical);
-  $('battery-banner').classList.toggle('show', critical);
+  if (!critical) batteryDismissed = false;
+  $('battery-pct-big').textContent = pct + '%';
+  $('battery-overlay').classList.toggle('show', critical && !batteryDismissed);
+}
+function dismissBatteryOverlay() {
+  batteryDismissed = true;
+  $('battery-overlay').classList.remove('show');
 }
 
 // ---------- helpers ----------
