@@ -28,6 +28,7 @@ async function init() {
   setInterval(refreshPrayer, 60 * 60 * 1000);
   setupSSE();
   requestWake();
+  initBattery();
   document.addEventListener('visibilitychange', () => { if (!document.hidden) requestWake(); });
   setupFitToScreen();
   // Arm audio on any user tap (covers the autoplay-blocked fallback overlay).
@@ -781,6 +782,31 @@ function setupSSE() {
 async function requestWake() {
   if (!cfg?.keepAwake || !('wakeLock' in navigator)) return;
   try { wakeLock = await navigator.wakeLock.request('screen'); } catch {}
+}
+
+// ---------- battery ----------
+// Battery Status API — supported on Chromium (the display device's browser
+// per README); silently a no-op elsewhere, since the pill stays hidden.
+function initBattery() {
+  if (!navigator.getBattery) return;
+  navigator.getBattery().then((battery) => {
+    const update = () => updateBattery(battery);
+    battery.addEventListener('levelchange', update);
+    battery.addEventListener('chargingchange', update);
+    update();
+  }).catch(() => {});
+}
+function updateBattery(battery) {
+  const pct = Math.round(battery.level * 100);
+  const low = pct <= 20, critical = pct <= 10;
+  $('battery-pill').hidden = false;
+  $('battery-pct').textContent = pct + '%';
+  $('battery-icon').textContent = battery.charging ? '🔌' : (critical ? '🪫' : '🔋');
+  $('battery-pill').classList.toggle('low', low);
+  $('battery-pill').classList.toggle('critical', critical);
+  $('battery-glow').classList.toggle('show', low);
+  $('battery-glow').classList.toggle('critical', critical);
+  $('battery-banner').classList.toggle('show', critical);
 }
 
 // ---------- helpers ----------
