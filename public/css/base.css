@@ -40,7 +40,7 @@ body {
 /* ---------- layout ---------- */
 /* Fills the full viewport width; fitToScreen() scales the root font-size so the
    height fits the screen without scrolling, keeping every widget edge-to-edge. */
-.app { width: 100%; max-width: 1540px; padding: 1.5rem 2rem 1.75rem; }
+.app { width: 100%; max-width: 1540px; padding: 1.5rem 5px 1.75rem 2rem; }
 
 .topbar {
   display: flex; align-items: center; justify-content: space-between;

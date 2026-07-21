@@ -68,6 +68,10 @@ function fitToScreen() {
   const root = document.documentElement;
   const base = 16 * (cfg?.fontScale || 1);    // the user's chosen "across the room" size
   _fitting = true;
+  // Clear any vertical stretch padding from a previous pass before measuring
+  // — otherwise it compounds on every re-fit (font-scale change, resize, …).
+  app.style.paddingTop = '';
+  app.style.paddingBottom = '';
   let size = base;
   root.style.fontSize = size + 'px';
   // Each pass shrinks size by whichever of height or width is more over
@@ -79,18 +83,38 @@ function fitToScreen() {
   // against a stale (pre-fitHeroClock) clock box and only reconciling them
   // afterwards left the two calls perpetually invalidating each other's
   // measurement, oscillating between two font-sizes forever instead of
-  // settling on one.
-  for (let i = 0; i < 6; i++) {
+  // settling on one. The width budget keeps a 10px buffer so the right edge
+  // never rides flush against the screen edge — both because the ratio-based
+  // shrink doesn't converge to an exact pixel (non-rem content like borders
+  // means font-size and rendered width aren't perfectly proportional) and
+  // because a device's real font metrics can come out a touch wider than
+  // what was measured here.
+  for (let i = 0; i < 10; i++) {
     fitHeroClock();
     const h = app.offsetHeight;
     if (!h) break;
-    const ratio = Math.min((window.innerHeight - 2) / h, app.clientWidth / app.scrollWidth);
+    const ratio = Math.min((window.innerHeight - 2) / h, (app.clientWidth - 10) / app.scrollWidth);
     const next = Math.max(6, Math.min(size * ratio, base * 4));
-    if (Math.abs(next - size) < 0.1) { size = next; break; }
+    const done = Math.abs(next - size) < 0.05;
+    // Apply before checking for convergence (not after) — a tiny remaining
+    // font-size delta can still correspond to several px of real layout
+    // width once multiplied across every scaled element, so skipping this
+    // last write left a few px of residual overflow past the buffer above.
     size = next;
     root.style.fontSize = size + 'px';
+    if (done) break;
   }
   fitHeroClock();
+  // Wide, short screens are usually width-bound, not height-bound, and settle
+  // with vertical room to spare — left as-is that shows up as a dead strip
+  // above and below the dock. Grow the dock's own top/bottom padding to soak
+  // up that leftover height instead, so it fills the screen edge-to-edge.
+  const slack = window.innerHeight - app.offsetHeight;
+  if (slack > 0) {
+    const cs = getComputedStyle(app);
+    app.style.paddingTop = (parseFloat(cs.paddingTop) + slack / 2) + 'px';
+    app.style.paddingBottom = (parseFloat(cs.paddingBottom) + slack / 2) + 'px';
+  }
   requestAnimationFrame(() => { _fitting = false; });
 }
 
@@ -106,8 +130,13 @@ function setupFitToScreen() {
   // below), which re-fits the clock alone, not the root font-size — so the
   // rest of the dock, including the right column, is left oversized and
   // clipped by the screen edge. Re-running the full fit once every font is
-  // confirmed loaded recomputes the root size against real metrics.
-  if (document.fonts) document.fonts.ready.then(() => { if (!_fitting) fitToScreen(); });
+  // confirmed loaded recomputes the root size against real metrics. Called
+  // unconditionally (not guarded by _fitting) — by the time this microtask
+  // runs, the initial fitToScreen() call has already returned and only its
+  // trailing requestAnimationFrame reset is still pending, so a guard here
+  // would silently drop this correction whenever fonts happen to already be
+  // ready (e.g. warm cache), which is exactly the case it exists to catch.
+  if (document.fonts) document.fonts.ready.then(() => fitToScreen());
   const app = document.querySelector('.app');
   if (app && 'ResizeObserver' in window) {
     // Re-fit when real content changes size. The _fitting guard stops our own
