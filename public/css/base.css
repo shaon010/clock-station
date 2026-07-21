@@ -124,6 +124,13 @@ body {
 .datebar .hijri { font-size: min(6cqh, 3.8cqw); color: var(--accent); font-family: var(--font-mono); }
 
 /* ---------- clock styles ---------- */
+/* Standard: the default face, or one of the standardFont picks below —
+   --standard-font stays unset for "default", so this falls through to the
+   theme's own --font-display untouched. */
+.clock[data-style="standard"] { font-family: var(--standard-font, var(--font-display)); }
+:root[data-standard-font="roboto"]     { --standard-font: "Roboto Clock", var(--font-display); }
+:root[data-standard-font="handwritten"] { --standard-font: "Caveat Clock", var(--font-display); }
+
 /* Minimal: thin, airy numerals. */
 .clock[data-style="minimal"] { font-weight: 200; letter-spacing: 0.04em; }
 
@@ -281,6 +288,28 @@ body {
   font-weight: 400;
   font-display: swap;
   src: url("/fonts/fasterone-latin.woff2") format("woff2");
+  unicode-range: U+30-3A;
+}
+/* Two faces for the standard clock style, same self-hosted/subset treatment
+   as the neon faces above. Picked in Settings via standardFont — "default"
+   is deliberately not a font-face at all, it just leaves --standard-font
+   unset so .clock[data-style="standard"] below falls back to the theme's own
+   --font-display (system-ui/Segoe/Roboto or Constantia/Georgia, see
+   themes.css) instead of forcing a look on every theme. */
+@font-face {
+  font-family: "Roboto Clock";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/roboto-latin.woff2") format("woff2");
+  unicode-range: U+30-3A;
+}
+@font-face {
+  font-family: "Caveat Clock";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/caveat-latin.woff2") format("woff2");
   unicode-range: U+30-3A;
 }
 

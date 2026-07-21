@@ -11,8 +11,11 @@ let deviceLoc = null;   // the display device's own geolocation, when available 
 let prayer = null;      // response of /api/prayer-times
 let fired = new Set();    // guards against double-firing adhan within a minute
 let pending = new Set();  // in-flight play() attempts, so a slow-loading file doesn't get its src reset every tick
+let prewarmed = new Set();  // confirmed-ready adhan files, keyed by day+prayer
+let prewarmTriggered = new Set();  // reload already issued for a not-yet-ready day+prayer, don't reissue every tick
 let soundArmed = false;
 let wakeLock = null;
+let activeAdhanEl = null;   // whichever of audio-adhan/audio-adhan-fajr is (or was last) playing
 
 // ---------- boot ----------
 init();
@@ -36,6 +39,7 @@ async function init() {
   document.body.addEventListener('click', () => { if (!soundArmed) armSound(); }, { once: true });
   // "Now playing" overlay closes itself when the adhan finishes, or on tap.
   $('audio-adhan').addEventListener('ended', hideAdhanOverlay);
+  $('audio-adhan-fajr').addEventListener('ended', hideAdhanOverlay);
   $('adhan-stop').addEventListener('click', stopAdhan);
   setupFullscreenToggle();
 }
@@ -183,6 +187,7 @@ async function refreshConfig() {
   document.documentElement.dataset.clockStyle = cfg.clockStyle || 'standard';
   document.documentElement.dataset.clockColor = cfg.clockColor || 'default';
   document.documentElement.dataset.clockFont = cfg.clockFont || 'monoton';
+  document.documentElement.dataset.standardFont = cfg.standardFont || 'default';
   document.documentElement.style.fontSize = (16 * (cfg.fontScale || 1)) + 'px';
   if (cfg.location?.auto === false) deviceLoc = null;   // manual location wins over any stale GPS fix
   $('loc').textContent = deviceLoc?.name || cfg.location?.name || '';
@@ -519,21 +524,69 @@ function updateNextPrayer(now) {
 }
 
 // ---------- adhan scheduler ----------
-// Warm the browser's cache for today's adhan/iqamah files ahead of time, so
-// the actual play() at prayer time hits a cached file instead of racing a
-// fresh network fetch (which is when a slow/flaky connection can make play()
-// resolve — "not blocked by autoplay" — before any audio has really loaded,
-// producing the overlay with no sound). Only 2-3 distinct files matter for a
-// whole day, so this is cheap to redo whenever the muezzin/config changes.
+// Load today's adhan/iqamah files ahead of time, directly into the actual
+// playback elements, so the play() call at prayer time doesn't need to fetch
+// or (re)buffer anything. An earlier version of this warmed the browser's
+// *HTTP cache* via throwaway `new Audio()` instances instead — that avoided
+// the network fetch, but playAdhan() still reassigned `el.src` on the real
+// element at trigger time, which resets it and starts a fresh resource-load
+// from scratch even against a cached response. play()'s promise resolves
+// once playback *begins*, not once it's audible, so that reload could still
+// lose the race: the "Playing Adhan" overlay would show with no sound, and
+// the element would stay stuck until the next full page reload reset it.
+// Playing straight out of an element that was already fully loaded here
+// removes that gap. A dedicated element for the Fajr file (see HTML) means
+// the regular file's element is never touched — and never has to reload —
+// on the one day-part that needs the other recording.
 function preloadAdhanAudio() {
   const muezzin = cfg.adhan?.muezzin || 'mishary';
-  const srcs = [`/audio/${muezzin}.mp3`, `/audio/${muezzin}-fajr.mp3`];
-  if (cfg.adhan?.iqamah?.chimeEnabled) srcs.push('/audio/iqamah.mp3');
-  for (const src of srcs) {
-    const a = new Audio();
-    a.preload = 'auto';
-    a.src = src;
-    a.load();
+  preloadInto($('audio-adhan'), `/audio/${muezzin}.mp3`);
+  preloadInto($('audio-adhan-fajr'), `/audio/${muezzin}-fajr.mp3`);
+  if (cfg.adhan?.iqamah?.chimeEnabled) preloadInto($('audio-iqamah'), '/audio/iqamah.mp3');
+}
+
+// Only reassigns `src` (and reloads) when it's actually different from what
+// the element already has, unless `force` is set — repeated config-changed
+// broadcasts (e.g. a dimming-level tweak, unrelated to the muezzin) would
+// otherwise re-arm and re-buffer the same file over and over for no reason.
+// `force` is for ensureAdhanReady(): reload even when dataset.src still
+// matches, because that alone doesn't prove the buffered data survived.
+function preloadInto(el, src, force) {
+  if (!el || (!force && el.dataset.src === src)) return;
+  el.dataset.src = src;
+  el.src = src;
+  el.load();
+}
+
+// Confirm, not just assume, that each prayer's adhan file is actually ready
+// to play without stalling — starting a few minutes ahead of its trigger
+// time. preloadAdhanAudio() (page load / muezzin change) loads the file once,
+// but a 24/7 kiosk tab can sit on the same page for days, and the browser is
+// free to reclaim a long-idle element's buffered audio under memory pressure
+// without touching el.src — invisible to the dataset.src check preloadInto()
+// otherwise relies on. Checking el.readyState directly here catches that, and
+// still leaves several minutes of runway to (re)load before the trigger,
+// rather than discovering it stalled right when the adhan should start.
+// `prewarmTriggered` makes the reload one-shot per day+prayer: calling
+// el.load() again on every tick while it's still buffering would abort and
+// restart that same in-flight load each second, so it could never finish.
+const PREWARM_MIN = 5;
+function ensureAdhanReady(now) {
+  if (!prayer || !cfg.adhan?.enabled) return;
+  const dayTag = now.toISOString().slice(0, 10);
+  const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const muezzin = cfg.adhan?.muezzin || 'mishary';
+  for (const name of PRAYERS) {
+    if (cfg.adhan.perPrayer?.[KEY[name]] === false) continue;
+    const until = toMin(prayer.timings[name]) - nowMin;
+    if (until <= 0 || until > PREWARM_MIN) continue;   // only in the run-up window
+    const key = `${dayTag}:${name}`;
+    if (prewarmed.has(key)) continue;
+    const isFajr = name === 'Fajr';
+    const el = isFajr ? $('audio-adhan-fajr') : $('audio-adhan');
+    const src = isFajr ? `/audio/${muezzin}-fajr.mp3` : `/audio/${muezzin}.mp3`;
+    if (el.dataset.src === src && el.readyState >= 3) { prewarmed.add(key); continue; }  // HAVE_FUTURE_DATA
+    if (!prewarmTriggered.has(key)) { prewarmTriggered.add(key); preloadInto(el, src, true); }
   }
 }
 
@@ -541,7 +594,8 @@ function checkAdhan(now) {
   if (!prayer || !cfg.adhan?.enabled) return;
   const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const dayTag = now.toISOString().slice(0, 10);
-  if (now.getHours() === 0 && now.getMinutes() === 0) { fired.clear(); pending.clear(); }
+  if (now.getHours() === 0 && now.getMinutes() === 0) { fired.clear(); pending.clear(); prewarmed.clear(); prewarmTriggered.clear(); }
+  ensureAdhanReady(now);
 
   for (const name of PRAYERS) {
     // adhan at prayer time
@@ -574,13 +628,14 @@ function checkAdhan(now) {
 function playAdhan(isFajr, onPlaying, label, onSettled) {
   const name = label || (isFajr ? 'Fajr' : '');
   const muezzin = cfg.adhan?.muezzin || 'mishary';
-  const el = $('audio-adhan');
+  const el = isFajr ? $('audio-adhan-fajr') : $('audio-adhan');
   const src = isFajr ? `/audio/${muezzin}-fajr.mp3` : `/audio/${muezzin}.mp3`;
-  el.src = src;
+  preloadInto(el, src);   // safety net if preload hasn't run yet, e.g. right after a muezzin change
   el.volume = cfg.adhan?.volume ?? 0.85;
+  activeAdhanEl = el;
   const started = () => { showAdhanOverlay(name); if (onPlaying) onPlaying(); };
   play(el, started, () => { // if fajr file 404s, fall back to the regular adhan
-    if (isFajr) { el.src = `/audio/${muezzin}.mp3`; play(el, started, onSettled); }
+    if (isFajr) { preloadInto(el, `/audio/${muezzin}.mp3`); play(el, started, onSettled); }
     else if (onSettled) onSettled();
   });
 }
@@ -601,7 +656,7 @@ function armSound() {
   soundArmed = true;
   $('sound-arm').classList.remove('show');
   // unlock the audio elements with a silent play/pause
-  for (const id of ['audio-adhan', 'audio-iqamah']) {
+  for (const id of ['audio-adhan', 'audio-adhan-fajr', 'audio-iqamah']) {
     const el = $(id); el.muted = true;
     el.play().then(() => { el.pause(); el.currentTime = 0; el.muted = false; }).catch(() => { el.muted = false; });
   }
@@ -614,7 +669,7 @@ function showAdhanOverlay(name) {
 }
 function hideAdhanOverlay() { $('adhan-overlay').classList.remove('show'); }
 function stopAdhan() {
-  const el = $('audio-adhan');
+  const el = activeAdhanEl || $('audio-adhan');
   el.pause();
   el.currentTime = 0;
   hideAdhanOverlay();
