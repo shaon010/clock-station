@@ -61,16 +61,6 @@ body {
 }
 .icon-btn:hover, .icon-btn:focus-visible { color: var(--accent); border-color: var(--accent); background: var(--surface-2); }
 
-/* ---------- battery indicator ---------- */
-.battery-pill {
-  display: flex; align-items: center; gap: 0.3rem;
-  font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim);
-}
-.battery-pill .battery-icon { font-size: 1.05rem; line-height: 1; }
-.battery-pill.low { color: #ff6b57; }
-.battery-pill.critical { color: #ff2d2d; animation: batteryPulse 1.2s ease-in-out infinite; }
-@keyframes batteryPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
 /* Left column (clock + prayers) gets 10% extra width so the clock hero can run
    bigger; the right column (weather, week, agenda, hadith) gives up that 10%
    but still has enough room to stay readable. */

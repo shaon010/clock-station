@@ -799,11 +799,6 @@ function initBattery() {
 function updateBattery(battery) {
   const pct = Math.round(battery.level * 100);
   const low = pct <= 20, critical = pct <= 10;
-  $('battery-pill').hidden = false;
-  $('battery-pct').textContent = pct + '%';
-  $('battery-icon').textContent = battery.charging ? '🔌' : (critical ? '🪫' : '🔋');
-  $('battery-pill').classList.toggle('low', low);
-  $('battery-pill').classList.toggle('critical', critical);
   $('battery-glow').classList.toggle('show', low);
   $('battery-glow').classList.toggle('critical', critical);
   $('battery-banner').classList.toggle('show', critical);
