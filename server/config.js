@@ -16,8 +16,18 @@ const CONFIG_PATH = join(DATA_DIR, 'config.json');
 // no card, no expiry — upstash.com), store/load the config through those
 // instead; otherwise fall back to the local file, which is all local/self-
 // hosted use needs.
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+// Strip accidental wrapping quotes — a common paste error when copying an
+// env var written as NAME="value" straight into a dashboard's value field,
+// which otherwise makes the URL/token literally include the quote chars.
+function cleanEnv(v) {
+  if (!v) return v;
+  const trimmed = v.trim();
+  const quoted = /^"(.*)"$/.exec(trimmed) || /^'(.*)'$/.exec(trimmed);
+  return quoted ? quoted[1] : trimmed;
+}
+
+const UPSTASH_URL = cleanEnv(process.env.UPSTASH_REDIS_REST_URL);
+const UPSTASH_TOKEN = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
 const REMOTE = Boolean(UPSTASH_URL && UPSTASH_TOKEN);
 const CONFIG_KEY = 'clockdock:config';
 
