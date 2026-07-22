@@ -111,8 +111,11 @@
   </div>
 </div>
 
-<!-- adhan / iqamah audio (src set at runtime) -->
+<!-- adhan / iqamah audio (src set at runtime). Fajr gets its own element so
+     preloading/playing the once-a-day Fajr recording never forces the
+     regular adhan element (used 4x/day) to drop its buffered audio. -->
 <audio id="audio-adhan" preload="auto"></audio>
+<audio id="audio-adhan-fajr" preload="auto"></audio>
 <audio id="audio-iqamah" preload="auto"></audio>
 
 <script src="/js/sky.js"></script>
