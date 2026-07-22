@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: clock-dock
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      # Free Upstash Redis (upstash.com, no card, no expiry) so settings
+      # survive redeploys on Render's ephemeral free-plan filesystem.
+      # Copy both values from the Upstash console's REST API tab.
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false

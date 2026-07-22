@@ -44,6 +44,24 @@ on, see `scripts/WINDOWS-SETUP.md`.
 On Render (or any host), set `OPENWEATHER_API_KEY` in the service's environment
 variables — without it the weather card falls back to "unavailable".
 
+### Persisting settings across Render redeploys
+
+Render's web service filesystem is **ephemeral** — every redeploy starts from a
+clean container, so `data/config.json` (your saved settings) would otherwise
+reset to defaults each time. Persistent disks fix that but require a paid
+plan, so on the free plan Clock Dock instead stores the config in a free
+[Upstash Redis](https://upstash.com) database (no card, no expiry, generous
+free tier) when configured:
+
+1. Create a free database at upstash.com → open its **REST API** tab.
+2. In your Render service's environment variables, set:
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
+3. Redeploy. Settings now persist through every future redeploy.
+
+Without those two env vars set, Clock Dock just uses the local `data/config.json`
+file, which is all local/self-hosted (non-Render) use needs.
+
 ## Layout
 
 ```

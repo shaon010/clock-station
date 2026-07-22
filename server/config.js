@@ -7,8 +7,30 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(__dirname, '..');
-const DATA_DIR = join(ROOT, 'data');
+export const DATA_DIR = process.env.DATA_DIR || join(ROOT, 'data');
 const CONFIG_PATH = join(DATA_DIR, 'config.json');
+
+// Render's free web service disk is ephemeral (wiped on every redeploy) and
+// persistent disks require a paid plan, so config.json can't just live on
+// local disk there. If Upstash Redis REST credentials are set (free tier,
+// no card, no expiry — upstash.com), store/load the config through those
+// instead; otherwise fall back to the local file, which is all local/self-
+// hosted use needs.
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const REMOTE = Boolean(UPSTASH_URL && UPSTASH_TOKEN);
+const CONFIG_KEY = 'clockdock:config';
+
+async function upstash(command) {
+  const res = await fetch(UPSTASH_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(command)
+  });
+  if (!res.ok) throw new Error(`Upstash ${command[0]} failed: ${res.status}`);
+  const { result } = await res.json();
+  return result;
+}
 
 export const DEFAULT_CONFIG = {
   location: { name: 'Dhaka, Bangladesh', lat: 23.8103, lon: 90.4125, auto: true },
@@ -73,7 +95,8 @@ let cache = null;
 export async function getConfig() {
   if (cache) return cache;
   try {
-    const raw = await readFile(CONFIG_PATH, 'utf8');
+    const raw = REMOTE ? await upstash(['GET', CONFIG_KEY]) : await readFile(CONFIG_PATH, 'utf8');
+    if (!raw) throw new Error('no saved config');
     cache = deepMerge(DEFAULT_CONFIG, JSON.parse(raw));
   } catch {
     cache = structuredClone(DEFAULT_CONFIG);
@@ -99,6 +122,11 @@ export async function replaceConfig(next) {
 }
 
 async function persist() {
+  const json = JSON.stringify(cache, null, 2);
+  if (REMOTE) {
+    await upstash(['SET', CONFIG_KEY, json]);
+    return;
+  }
   await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(CONFIG_PATH, JSON.stringify(cache, null, 2), 'utf8');
+  await writeFile(CONFIG_PATH, json, 'utf8');
 }

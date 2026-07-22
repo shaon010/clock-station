@@ -12,9 +12,9 @@
 // below) so the front end's existing WMO-code icon/scene tables didn't need to change.
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ROOT } from './config.js';
+import { DATA_DIR } from './config.js';
 
-const CACHE_PATH = join(ROOT, 'data', 'weather-cache.json');
+const CACHE_PATH = join(DATA_DIR, 'weather-cache.json');
 const FRESH_MS = 10 * 60 * 1000;   // consider a fetch fresh for 10 minutes
 const FORECAST_DAYS = 5;           // OpenWeatherMap's free forecast only spans ~5 days
 const FETCH_TIMEOUT_MS = 15000;    // hosted PaaS egress can be much slower than local
@@ -128,6 +128,6 @@ async function readCache() {
   catch { return null; }
 }
 async function writeCache(obj) {
-  await mkdir(join(ROOT, 'data'), { recursive: true });
+  await mkdir(DATA_DIR, { recursive: true });
   await writeFile(CACHE_PATH, JSON.stringify(obj), 'utf8');
 }
