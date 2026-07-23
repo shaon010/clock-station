@@ -8,6 +8,7 @@ import { setDefaultResultOrder } from 'node:dns';
 import { getConfig, updateConfig, replaceConfig, ROOT } from './config.js';
 import { computePrayerTimes, METHOD_KEYS } from './prayer.js';
 import { getWeather } from './weather.js';
+import { scheduleHijriRefresh } from './hijri.js';
 
 // Load .env (if present) so local runs don't need `export` every time —
 // hosts like Render set real env vars directly, so this is a no-op there.
@@ -172,7 +173,7 @@ const server = createServer(async (req, res) => {
       const cfg = await getConfig();
       const dateStr = url.searchParams.get('date');
       const date = dateStr ? new Date(dateStr + 'T12:00:00') : new Date();
-      return sendJSON(res, computePrayerTimes(withLocation(cfg, url), date));
+      return sendJSON(res, await computePrayerTimes(withLocation(cfg, url), date, !dateStr));
     }
 
     if (path === '/api/weather' && method === 'GET') {
@@ -253,6 +254,8 @@ const server = createServer(async (req, res) => {
     sendJSON(res, { error: 'server error' }, 500);
   }
 });
+
+scheduleHijriRefresh();
 
 server.listen(PORT, () => {
   const ip = lanIP();

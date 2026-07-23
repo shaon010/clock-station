@@ -1,8 +1,10 @@
 // prayer.js — fully offline prayer times, Hijri date, and Qibla bearing.
-// Times come from the `adhan` library (no network); Hijri comes from the ICU
-// islamic-umalqura calendar built into Node's Intl.
+// Times come from the `adhan` library (no network); Hijri is the daily-
+// refreshed live date from hijri.js (falling back to the ICU islamic-umalqura
+// calendar when both live sources are unreachable).
 import * as adhan from 'adhan';
 import tzlookup from 'tz-lookup';
+import { hijriFor, getHijriToday } from './hijri.js';
 
 const METHODS = {
   MuslimWorldLeague: adhan.CalculationMethod.MuslimWorldLeague,
@@ -50,17 +52,7 @@ function localParts(date, tz) {
   return { ymd: `${get('year')}-${get('month')}-${get('day')}`, dow };
 }
 
-// Hijri date via ICU, with a manual ± day offset for local moon-sighting.
-export function hijriFor(date, offsetDays = 0, tz = 'UTC') {
-  const shifted = new Date(date.getTime() + offsetDays * 86400000);
-  const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
-    day: 'numeric', month: 'long', year: 'numeric', timeZone: tz
-  }).formatToParts(shifted);
-  const get = (t) => parts.find((p) => p.type === t)?.value || '';
-  return { day: get('day'), month: get('month'), year: get('year') };
-}
-
-export function computePrayerTimes(cfg, date = new Date()) {
+export async function computePrayerTimes(cfg, date = new Date(), liveHijri = true) {
   const coords = new adhan.Coordinates(cfg.location.lat, cfg.location.lon);
   const tz = tzlookup(cfg.location.lat, cfg.location.lon);
   const params = buildParams(cfg);
@@ -92,7 +84,7 @@ export function computePrayerTimes(cfg, date = new Date()) {
     dhuhrLabel: (isFriday && jumuah.enabled) ? "Jumu'ah" : 'Dhuhr',
     timings,
     iqamah,
-    hijri: hijriFor(date, cfg.prayer.hijriOffset || 0, tz),
+    hijri: liveHijri ? await getHijriToday() : hijriFor(date, cfg.prayer.hijriOffset || 0, tz),
     qibla: adhan.Qibla(coords)   // degrees clockwise from true north
   };
 }
