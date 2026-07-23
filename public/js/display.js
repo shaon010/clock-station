@@ -331,6 +331,7 @@ function setFlipDigit(cell, val) {
 let _fittingClock = false;
 let _lastClockShape = null;
 const CLOCK_FIT_REF = 200; // px reference; text scales linearly from here
+const CLOCK_SIZE_SCALE = 0.95; // shrinks the fitted clock uniformly (box-fit and ink-fill both read availW/availH, so scaling those keeps every style consistent)
 
 function fitHeroClock() {
   const hero = document.querySelector('.hero');
@@ -348,9 +349,9 @@ function fitHeroClock() {
   // and subtracted separately here — otherwise the clock gets sized as if
   // that margin didn't exist and the date row overflows past the card edge.
   const gap = datebar ? parseFloat(getComputedStyle(datebar).marginTop) || 0 : 0;
-  const availW = hero.clientWidth - padX;
+  const availW = (hero.clientWidth - padX) * CLOCK_SIZE_SCALE;
   const dateH = datebar ? datebar.getBoundingClientRect().height : 0;
-  const availH = hero.clientHeight - padY - gap - dateH;
+  const availH = (hero.clientHeight - padY - gap - dateH) * CLOCK_SIZE_SCALE;
 
   // For plain-text styles (standard/minimal/neon/aurora), .clock is a plain
   // block element, so it always fills its container's width regardless of
