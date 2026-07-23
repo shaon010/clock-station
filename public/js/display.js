@@ -233,7 +233,12 @@ function drawClock(now) {
     el._flip = null;
   }
   el.classList.toggle('has-seconds', !!cfg?.units?.showSeconds);
-  if (style === 'flip' || style === 'flip-white') renderFlipClock(el, main);
+  const isFlip = style === 'flip' || style === 'flip-white';
+  // Real split-flap clocks have a fixed two-tile hour slot; unlike every other
+  // style (which is fine rendering one digit narrower), the flip clock needs a
+  // blank tens tile for single-digit 12h hours instead of just dropping it.
+  const flipMain = isFlip && /^\d:/.test(main) ? ` ${main}` : main;
+  if (isFlip) renderFlipClock(el, flipMain);
   else if (style === 'lcd') renderSevenSegClock(el, main);
   else renderPlainClock(el, main);
   $('ampm-badge').textContent = ap;
@@ -243,7 +248,8 @@ function drawClock(now) {
 
   // Only re-measure when the digit layout actually changed (hour gains/loses a
   // digit, seconds toggle, style switch) — not on every second's tick.
-  const shapeKey = `${style}|${main.replace(/\d/g, '0')}`;
+  const shapeMain = isFlip ? flipMain : main;
+  const shapeKey = `${style}|${shapeMain.replace(/\d/g, '0')}`;
   if (shapeKey !== _lastClockShape) {
     _lastClockShape = shapeKey;
     fitHeroClock();
