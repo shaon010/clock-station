@@ -23,10 +23,15 @@ body {
 }
 
 /* ---------- animated sky (weather + day/night) ---------- */
-/* Full-screen canvas painted by sky.js, sitting behind the dock. The cards'
-   backdrop-blur frosts it into a soft background. pointer-events:none so the
-   tap-to-arm-sound handler on <body> still fires. */
+/* Two full-screen canvases painted by sky.js. #sky sits behind the dock (the
+   cards' backdrop-blur frosts it into a soft background) and carries the
+   gradient/sun/moon/fog. #sky-fx sits above the dock so weather particles
+   (stars, clouds, rain, snow, lightning) drift over the widgets themselves.
+   Both are pointer-events:none so the tap-to-arm-sound handler on <body>
+   still fires, and #sky-fx stays below the dim/adhan overlays so those still
+   darken/cover it. */
 #sky { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+#sky-fx { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
 .app { position: relative; z-index: 1; }
 /* Chrome that sits directly on the sky (not inside a card) gets a soft shadow
    so it stays readable whatever the weather paints behind it. */

@@ -1,8 +1,9 @@
-/* sky.js — the animated background. A single full-screen canvas behind the dock
-   that paints a living sky driven by weather + time of day: a day/dusk/night/dawn
-   gradient, sun or moon arcing across, drifting clouds, stars, rain, snow, fog,
-   and lightning during storms. Content sits on top; the cards' backdrop-blur
-   turns this into a soft frosted background.
+/* sky.js — the animated backdrop, split across two full-screen canvases.
+   #sky sits behind the dock and paints the day/dusk/night/dawn gradient, the
+   sun/moon, and ground fog — the cards' backdrop-blur turns it into a soft
+   frosted background. #sky-fx sits *above* the dock so weather particles
+   (stars, clouds, rain, snow, lightning) visibly drift over the widgets
+   instead of being hidden behind them.
 
    Kiosk-friendly: capped particle counts, framerate-independent motion, pauses
    when the tab is hidden, and falls back to a single static frame when the user
@@ -11,7 +12,7 @@
 (function () {
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  let cv, ctx, W = 0, H = 0, dpr = 1;
+  let cv, ctx, fxCv, fxCtx, W = 0, H = 0, dpr = 1;
   let running = false, lastT = 0;
   let cloudSprite = null, glowSprite = null;
 
@@ -30,9 +31,11 @@
                                           // weather refreshes, not just when set() runs
 
   // ---------- public API ----------
-  function init(canvas) {
+  function init(canvas, fxCanvas) {
     cv = canvas;
     ctx = cv.getContext('2d');
+    fxCv = fxCanvas;
+    fxCtx = fxCv ? fxCv.getContext('2d') : null;
     resize();
     addEventListener('resize', resize);
     document.addEventListener('visibilitychange', () => {
@@ -307,25 +310,14 @@
   }
 
   // ---------- draw ----------
-  function draw() {
+  // Background layer (#sky, behind the dock): gradient, sun/moon, ground fog —
+  // ambient light/color that the cards' backdrop-blur should frost.
+  function drawBg() {
     const s = sky();
-    // sky gradient
     const g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, rgb(cur.top));
     g.addColorStop(1, rgb(cur.bot));
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-
-    // stars (twinkle)
-    if (stars.length) {
-      for (const st of stars) {
-        st.tw += 0.02;
-        const a = st.base * (0.55 + 0.45 * Math.sin(st.tw));
-        ctx.globalAlpha = Math.max(0, a);
-        ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, 7); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
 
     // sun / moon
     if (cur.celest > 0.02 && s.cy < H * 0.9) {
@@ -347,42 +339,6 @@
       ctx.globalAlpha = 1;
     }
 
-    // clouds
-    if (clouds.length && cloudSprite) {
-      for (const c of clouds) {
-        ctx.globalAlpha = c.a * (scene.kind === 'storm' ? 0.92 : 0.85);
-        const w = 300 * c.s, h = 180 * c.s;
-        ctx.drawImage(cloudSprite, c.x - w / 2, c.y - h / 2, w, h);
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // rain
-    if (drops.length) {
-      ctx.strokeStyle = light() ? 'rgba(90,110,140,0.5)' : 'rgba(190,210,235,0.5)';
-      ctx.lineWidth = 1.1; ctx.lineCap = 'round';
-      const wind = scene.kind === 'storm' ? 0.32 : 0.12;
-      ctx.beginPath();
-      for (const d of drops) { ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - d.len * wind, d.y - d.len); }
-      ctx.stroke();
-    }
-
-    // snow
-    if (flakes.length) {
-      ctx.fillStyle = light() ? 'rgba(235,242,250,0.9)' : 'rgba(255,255,255,0.9)';
-      for (const f of flakes) { ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill(); }
-    }
-
-    // motes
-    if (motes.length) {
-      ctx.fillStyle = light() ? 'rgba(255,240,200,0.7)' : 'rgba(255,244,214,0.6)';
-      for (const m of motes) {
-        ctx.globalAlpha = 0.3 + 0.35 * Math.sin(m.tw);
-        ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, 7); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-
     // fog — soft drifting scrim near the ground
     if (scene.kind === 'fog') {
       const fg = ctx.createLinearGradient(0, H * 0.4, 0, H);
@@ -391,20 +347,77 @@
       fg.addColorStop(1, `rgba(${base},0.5)`);
       ctx.fillStyle = fg; ctx.fillRect(0, H * 0.4, W, H * 0.6);
     }
+  }
+
+  // Foreground layer (#sky-fx, above the dock): the actual weather particles,
+  // drawn so they visibly drift over the cards instead of being hidden behind
+  // them. Needs an explicit clear each frame since it's a transparent overlay.
+  function drawFx() {
+    if (!fxCtx) return;
+    fxCtx.clearRect(0, 0, W, H);
+
+    // stars (twinkle)
+    if (stars.length) {
+      for (const st of stars) {
+        st.tw += 0.02;
+        const a = st.base * (0.55 + 0.45 * Math.sin(st.tw));
+        fxCtx.globalAlpha = Math.max(0, a);
+        fxCtx.fillStyle = '#fff';
+        fxCtx.beginPath(); fxCtx.arc(st.x, st.y, st.r, 0, 7); fxCtx.fill();
+      }
+      fxCtx.globalAlpha = 1;
+    }
+
+    // clouds
+    if (clouds.length && cloudSprite) {
+      for (const c of clouds) {
+        fxCtx.globalAlpha = c.a * (scene.kind === 'storm' ? 0.92 : 0.85);
+        const w = 300 * c.s, h = 180 * c.s;
+        fxCtx.drawImage(cloudSprite, c.x - w / 2, c.y - h / 2, w, h);
+      }
+      fxCtx.globalAlpha = 1;
+    }
+
+    // rain
+    if (drops.length) {
+      fxCtx.strokeStyle = light() ? 'rgba(90,110,140,0.5)' : 'rgba(190,210,235,0.5)';
+      fxCtx.lineWidth = 1.1; fxCtx.lineCap = 'round';
+      const wind = scene.kind === 'storm' ? 0.32 : 0.12;
+      fxCtx.beginPath();
+      for (const d of drops) { fxCtx.moveTo(d.x, d.y); fxCtx.lineTo(d.x - d.len * wind, d.y - d.len); }
+      fxCtx.stroke();
+    }
+
+    // snow
+    if (flakes.length) {
+      fxCtx.fillStyle = light() ? 'rgba(235,242,250,0.9)' : 'rgba(255,255,255,0.9)';
+      for (const f of flakes) { fxCtx.beginPath(); fxCtx.arc(f.x, f.y, f.r, 0, 7); fxCtx.fill(); }
+    }
+
+    // motes
+    if (motes.length) {
+      fxCtx.fillStyle = light() ? 'rgba(255,240,200,0.7)' : 'rgba(255,244,214,0.6)';
+      for (const m of motes) {
+        fxCtx.globalAlpha = 0.3 + 0.35 * Math.sin(m.tw);
+        fxCtx.beginPath(); fxCtx.arc(m.x, m.y, m.r, 0, 7); fxCtx.fill();
+      }
+      fxCtx.globalAlpha = 1;
+    }
 
     // lightning
     if (flash > 0) {
-      ctx.fillStyle = `rgba(210,225,255,${flash * 0.45})`;
-      ctx.fillRect(0, 0, W, H);
+      fxCtx.fillStyle = `rgba(210,225,255,${flash * 0.45})`;
+      fxCtx.fillRect(0, 0, W, H);
     }
     if (bolt) {
-      ctx.strokeStyle = 'rgba(235,242,255,0.95)'; ctx.lineWidth = 2.4; ctx.lineJoin = 'round';
-      ctx.beginPath(); ctx.moveTo(bolt.pts[0][0], bolt.pts[0][1]);
-      for (const [x, y] of bolt.pts) ctx.lineTo(x, y);
-      ctx.stroke();
+      fxCtx.strokeStyle = 'rgba(235,242,255,0.95)'; fxCtx.lineWidth = 2.4; fxCtx.lineJoin = 'round';
+      fxCtx.beginPath(); fxCtx.moveTo(bolt.pts[0][0], bolt.pts[0][1]);
+      for (const [x, y] of bolt.pts) fxCtx.lineTo(x, y);
+      fxCtx.stroke();
     }
   }
 
+  function draw() { drawBg(); drawFx(); }
   function drawStatic() { if (ctx) draw(); }   // reduced-motion: one frame
 
   // draw a white sprite tinted to `col` using an offscreen buffer
@@ -428,6 +441,11 @@
     cv.width = W * dpr; cv.height = H * dpr;
     cv.style.width = W + 'px'; cv.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (fxCv) {
+      fxCv.width = W * dpr; fxCv.height = H * dpr;
+      fxCv.style.width = W + 'px'; fxCv.style.height = H + 'px';
+      fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
     if (!cloudSprite) buildSprites();
     rebuild();
     if (REDUCED) drawStatic();

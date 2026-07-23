@@ -19,7 +19,7 @@ let activeAdhanEl = null;  // whichever <audio> element is currently playing an 
 // ---------- boot ----------
 init();
 async function init() {
-  window.Sky?.init($('sky'));   // animated weather/day-night background
+  window.Sky?.init($('sky'), $('sky-fx'));   // animated weather/day-night background + foreground fx
   await refreshConfig();
   preloadAdhanAudio();
   await Promise.all([refreshPrayer(), refreshWeather(), refreshHadith(), loadNetInfo()]);
