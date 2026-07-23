@@ -127,7 +127,7 @@
     day:   [[126, 178, 226], [206, 228, 246]],
     dusk:  [[172, 150, 176], [246, 190, 160]],
   };
-  const light = () => ['daylight', 'paper'].includes(document.documentElement.dataset.theme);
+  const light = () => ['daylight', 'paper', 'cyan'].includes(document.documentElement.dataset.theme);
 
   function palette(phase) {
     const p = (light() ? PAL_LIGHT : PAL)[phase];

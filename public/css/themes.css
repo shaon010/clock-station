@@ -155,6 +155,23 @@
   --warn: #cbb27a;
 }
 
+/* ---- Cyan: crisp white, single bright cyan accent throughout ---- */
+:root[data-theme="cyan"] {
+  --bg: #f4f8fa;
+  --bg-glow: radial-gradient(ellipse at 85% -5%, rgba(88,216,255,0.14), transparent 55%);
+  --surface: #ffffff;
+  --surface-2: #eaf6fb;
+  --border: rgba(20,40,50,0.08);
+  --track: rgba(20,40,50,0.10);
+  --text: #16232a;
+  --text-dim: #62767e;
+  --accent: #58d8ff;
+  --accent-soft: rgba(88,216,255,0.14);
+  --accent-border: rgba(88,216,255,0.35);
+  --warn: #b5701f;
+  --card-blur: none;
+}
+
 /* ---- Paper: warm cream, light and readable like a printed page ---- */
 :root[data-theme="paper"] {
   --bg: #f2ece0;

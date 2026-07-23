@@ -37,7 +37,9 @@ body {
    so it stays readable whatever the weather paints behind it. */
 .topbar, .footer { text-shadow: 0 1px 3px rgba(0,0,0,0.55), 0 0 10px rgba(0,0,0,0.35); }
 :root[data-theme="daylight"] .topbar,
-:root[data-theme="daylight"] .footer { text-shadow: 0 1px 3px rgba(255,255,255,0.75), 0 0 10px rgba(255,255,255,0.5); }
+:root[data-theme="daylight"] .footer,
+:root[data-theme="cyan"] .topbar,
+:root[data-theme="cyan"] .footer { text-shadow: 0 1px 3px rgba(255,255,255,0.75), 0 0 10px rgba(255,255,255,0.5); }
 
 /* number rendering */
 .tnum { font-variant-numeric: tabular-nums; }
