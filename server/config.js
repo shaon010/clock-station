@@ -44,7 +44,7 @@ async function upstash(command) {
 
 export const DEFAULT_CONFIG = {
   location: { name: 'Dhaka, Bangladesh', lat: 23.8103, lon: 90.4125, auto: true },
-  theme: 'midnight',                       // midnight | daylight | focus | warm | nord | forest | sunset | mono | paper | cyan
+  theme: 'midnight',                       // midnight | daylight | focus | warm | nord | forest | sunset | mono | paper | cyan | cyan-dark
   clockStyle: 'standard',                  // standard | flip | flip-white | lcd | minimal | neon | aurora (clock face look)
   clockColor: 'accent',                    // default | accent | red | green | blue | amber | white | cyan | purple | pink
                                             // (applies to flip/neon/lcd only — "default" leaves each style's own look untouched)

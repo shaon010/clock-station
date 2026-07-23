@@ -155,6 +155,23 @@
   --warn: #cbb27a;
 }
 
+/* ---- Cyan Dark: same as Midnight, just the accent swapped to cyan ---- */
+:root[data-theme="cyan-dark"] {
+  --bg: #0d1117;
+  --bg-glow: radial-gradient(ellipse at 18% -5%, rgba(88,216,255,0.10), transparent 55%),
+             radial-gradient(ellipse at 95% 105%, rgba(88,216,255,0.06), transparent 55%);
+  --surface: rgba(13,17,23,0.62);
+  --surface-2: rgba(255,255,255,0.035);
+  --border: rgba(255,255,255,0.085);
+  --track: rgba(255,255,255,0.12);
+  --text: #e8edf2;
+  --text-dim: #8b95a6;
+  --accent: #58d8ff;
+  --accent-soft: rgba(88,216,255,0.14);
+  --accent-border: rgba(88,216,255,0.35);
+  --warn: #d99a5b;
+}
+
 /* ---- Cyan: crisp white, single bright cyan accent throughout ---- */
 :root[data-theme="cyan"] {
   --bg: #f4f8fa;
