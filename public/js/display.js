@@ -814,6 +814,7 @@ function setupSSE() {
   es.addEventListener('test-adhan', (e) => {
     try { const d = JSON.parse(e.data || '{}'); playAdhan(d.which === 'fajr'); } catch { playAdhan(false); }
   });
+  es.addEventListener('reload', () => location.reload());
   es.onerror = () => {}; // EventSource auto-reconnects (retry hint sent by server)
 }
 

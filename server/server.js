@@ -191,6 +191,13 @@ const server = createServer(async (req, res) => {
       return sendJSON(res, { ok: true });
     }
 
+    // Force the display(s) to reload — handy after a code update, or if a
+    // display is stuck, without walking over to it.
+    if (path === '/api/reload' && method === 'POST') {
+      broadcast('reload');
+      return sendJSON(res, { ok: true });
+    }
+
     if (path === '/api/audio-list' && method === 'GET') {
       let files = [];
       try {

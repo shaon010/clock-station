@@ -18,6 +18,7 @@ async function boot() {
   wireCalendar();
   wireAdhanTests();
   wireBackup();
+  wireDisplayControl();
 }
 
 // ---------- generic data-path fields ----------
@@ -147,6 +148,11 @@ function renderEvents() {
 function wireAdhanTests() {
   $('#test-adhan').onclick = () => { postJSON('/api/test-adhan', { which: 'regular' }); toast('Playing on display…'); };
   $('#test-fajr').onclick = () => { postJSON('/api/test-adhan', { which: 'fajr' }); toast('Playing Fajr on display…'); };
+}
+
+// ---------- display control ----------
+function wireDisplayControl() {
+  $('#reload-display').onclick = () => { postJSON('/api/reload', {}); toast('Reloading display…'); };
 }
 
 // ---------- backup ----------
