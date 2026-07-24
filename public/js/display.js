@@ -508,14 +508,23 @@ function updateNextPrayer(now) {
   if (!next) { next = { name: times[0].name, min: times[0].min + 1440 }; prevMin = times[times.length - 1].min; }
   else { const i = times.findIndex((p) => p.name === next.name); prevMin = i === 0 ? times[times.length - 1].min - 1440 : times[i - 1].min; }
 
-  const remain = next.min - nowMin, hrs = Math.floor(remain / 60), mins = Math.floor(remain % 60);
+  const remain = next.min - nowMin;
+  const remainSec = Math.max(0, Math.round(remain * 60));
+  const hrs = Math.floor(remainSec / 3600), mins = Math.floor((remainSec % 3600) / 60), secs = remainSec % 60;
   $('np-name').textContent = next.name === 'Dhuhr' ? prayer.dhuhrLabel : next.name;
   $('np-time').textContent = fmt12(t[next.name]);
-  $('np-in').textContent = hrs > 0 ? `in ${hrs}h ${mins}m` : `in ${mins}m`;
+  $('np-in').textContent = hrs > 0
+    ? `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    : `${mins}:${String(secs).padStart(2, '0')}`;
+  const fajrToDhuhr = next.name === 'Dhuhr';   // long stretch — countdown/arc color-coding doesn't apply
+  $('np-in').classList.toggle('urgent', !fajrToDhuhr && remainSec < 30 * 60);
+  $('np-in').classList.toggle('soon', !fajrToDhuhr && remainSec >= 30 * 60 && remainSec < 60 * 60);
 
   const span = next.min - prevMin, pct = Math.max(0, Math.min(1, (nowMin - prevMin) / span));
   $('arc').style.strokeDashoffset = String(188.5 * (1 - pct));
   $('arc-pct').textContent = Math.round(pct * 100) + '%';
+  $('arc-wrap').classList.toggle('urgent', !fajrToDhuhr && pct > 0.8);
+  $('arc-wrap').classList.toggle('soon', !fajrToDhuhr && pct > 0.6 && pct <= 0.8);
   document.querySelectorAll('#prayers .ptile').forEach((el) =>
     el.classList.toggle('active', el.dataset.name === next.name));
 }

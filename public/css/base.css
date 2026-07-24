@@ -348,22 +348,32 @@ body {
   background: var(--accent-soft); border: 1px solid var(--accent-border);
   border-radius: calc(var(--radius) - 6px); padding: 0.75rem 1.1rem;
 }
-.np-info { flex: 1; min-width: 0; }
+.np-info {
+  flex: 1; min-width: 0; display: flex; align-items: baseline;
+  gap: 0.6rem; flex-wrap: wrap;
+}
 .arc-wrap { position: relative; width: 3.4rem; height: 3.4rem; flex: none; }
 .arc-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
 .arc-track { fill: none; stroke: var(--track); stroke-width: 6; }
 .arc-fill { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
 .arc-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-family: var(--font-mono); color: var(--accent); }
+.arc-wrap.soon .arc-fill, .arc-wrap.soon .arc-label { stroke: var(--warn); color: var(--warn); }
+.arc-wrap.urgent .arc-fill, .arc-wrap.urgent .arc-label { stroke: #ff3b30; color: #ff3b30; }
 .np-name {
   font-family: var(--font-display); font-weight: var(--display-weight);
-  font-size: clamp(2.4rem, 6vw, 3.6rem); line-height: 1;
+  font-size: clamp(1.8rem, 4.5vw, 2.6rem); line-height: 1;
 }
 .np-time {
-  flex: 1; min-width: 0; text-align: center;
-  font-family: var(--font-display); font-weight: var(--display-weight);
-  font-size: clamp(2.4rem, 6vw, 3.6rem); line-height: 1; white-space: nowrap;
+  font-family: var(--font-mono); font-weight: 600; color: var(--text-dim);
+  font-size: clamp(1.8rem, 4.5vw, 2.6rem); line-height: 1; white-space: nowrap;
 }
-.np-in { font-family: var(--font-mono); font-size: 1.15rem; color: var(--accent); white-space: nowrap; }
+.np-in {
+  font-family: var(--font-mono); font-weight: 600; color: var(--accent);
+  font-size: clamp(1.8rem, 4.5vw, 2.6rem); line-height: 1; white-space: nowrap;
+  margin-left: auto;
+}
+.np-in.soon { color: var(--warn); }       /* under 1 hour to go */
+.np-in.urgent { color: #ff3b30; }         /* under 30 minutes to go */
 
 /* ---------- prayer tiles (calendar-style row) ---------- */
 /* Sized compactly: this now sits as a plain stacked card in the right column
