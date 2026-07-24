@@ -36,13 +36,8 @@ async function init() {
   $('sound-arm').addEventListener('click', armSound);
   document.body.addEventListener('click', () => { if (!soundArmed) armSound(); }, { once: true });
   // "Now playing" overlay closes itself when the adhan finishes, or on tap.
-  // Also release the element's buffer once done: leaving a just-played file
-  // fully decoded/buffered but idle for hours (until the next prayer) gives a
-  // constrained kiosk media pipeline more chances for cross-talk between two
-  // simultaneously-loaded elements than releasing it and letting ensureAdhanReady
-  // (or the next playAdhan's preloadInto) reload it fresh when actually needed.
   for (const id of ['audio-adhan', 'audio-adhan-fajr']) {
-    $(id).addEventListener('ended', () => { activeAdhanEl = null; hideAdhanOverlay(); releaseAudioEl($(id)); });
+    $(id).addEventListener('ended', () => { activeAdhanEl = null; hideAdhanOverlay(); });
   }
   $('adhan-stop').addEventListener('click', stopAdhan);
   setupFullscreenToggle();
@@ -542,15 +537,6 @@ function preloadInto(el, src) {
   el.load();
 }
 
-// Drop a finished element back to HAVE_NOTHING so it isn't sitting fully
-// buffered/decoded and idle for hours between uses (see the `ended` listener
-// in init() for why). Whoever needs it next (playAdhan's preloadInto, or
-// ensureAdhanReady's prewarm) reloads it from scratch on its own.
-function releaseAudioEl(el) {
-  el.removeAttribute('src');
-  el.load();
-}
-
 // Warm the real playback elements for today's adhan/iqamah files ahead of
 // time, so the actual play() at prayer time hits already-buffered audio
 // instead of racing a fresh network fetch (which is when a slow/flaky
@@ -689,7 +675,6 @@ function stopAdhan() {
   el.currentTime = 0;
   activeAdhanEl = null;
   hideAdhanOverlay();
-  releaseAudioEl(el);
 }
 
 // ---------- weather ----------
