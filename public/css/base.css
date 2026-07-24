@@ -58,7 +58,7 @@ body {
   text-transform: uppercase; color: var(--accent); opacity: 0.9;
 }
 .stale-hint { color: var(--warn); font-size: 0.7rem; letter-spacing: 0.06em; }
-.topbar-right { display: flex; align-items: center; gap: 0.9rem; }
+.topbar-right { display: flex; align-items: center; gap: 0.9rem; margin-left: auto; }
 .icon-btn {
   background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem;
   padding: 0.3rem 0.4rem; margin: -0.3rem -0.4rem;
@@ -130,6 +130,12 @@ body {
 .datebar .greg { font-size: min(7cqh, 4.5cqw); }
 .datebar .hijri { font-size: min(5.2cqh, 3.3cqw); color: var(--accent); font-family: var(--font-mono); }
 .datebar .hijri.fallback { color: #ff3b30; } /* live Hijri sources are down; showing the offline umalqura estimate */
+/* Dot next to the Hijri date: green while waktusolat/JAKIM supplied it live, red when it fell back to the offline umalqura estimate. */
+.hijri-src-dot {
+  display: inline-block; width: 0.4em; height: 0.4em; border-radius: 50%;
+  background: #34c759; vertical-align: middle; margin-bottom: 0.15em;
+}
+.hijri-src-dot.offline { background: #ff3b30; }
 
 /* ---------- clock styles ---------- */
 /* Minimal: thin, airy numerals. */

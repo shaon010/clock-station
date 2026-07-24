@@ -147,7 +147,6 @@ async function initDeviceLocation() {
   const rg = await fetchJSON(`/api/reverse-geocode?lat=${loc.lat}&lon=${loc.lon}`);
   loc.name = (rg && rg.name) || `${loc.lat.toFixed(2)}, ${loc.lon.toFixed(2)}`;
   deviceLoc = loc;
-  $('loc').textContent = loc.name;
   await persistDeviceLoc(loc);   // so Settings shows the location actually in use
   await Promise.all([refreshPrayer(), refreshWeather()]);   // recompute for the real location
 }
@@ -188,7 +187,6 @@ async function refreshConfig() {
   document.documentElement.dataset.clockFont = cfg.clockFont || 'monoton';
   document.documentElement.style.fontSize = (16 * (cfg.fontScale || 1)) + 'px';
   if (cfg.location?.auto === false) deviceLoc = null;   // manual location wins over any stale GPS fix
-  $('loc').textContent = deviceLoc?.name || cfg.location?.name || '';
   $('hadith-card').style.display = cfg.hadith?.show === false ? 'none' : '';
   applyDimming();
   renderCalendar();
@@ -476,8 +474,9 @@ function inkFillScale(clock, fontPx, availW, availH) {
 async function refreshPrayer() {
   prayer = await fetchJSON('/api/prayer-times' + locQS());
   const h = prayer.hijri;
-  $('hijri').textContent = `${h.day} ${h.month} ${h.year} AH`;
+  $('hijri-text').textContent = `${h.day} ${h.month} ${h.year} AH`;
   $('hijri').classList.toggle('fallback', h.source === 'umalqura');
+  $('hijri-src-dot').classList.toggle('offline', h.source === 'umalqura');
   renderPrayerList();
 }
 
