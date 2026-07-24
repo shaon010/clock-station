@@ -12,10 +12,12 @@
 // below) so the front end's existing WMO-code icon/scene tables didn't need to change.
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import tzlookup from 'tz-lookup';
 import { DATA_DIR } from './config.js';
+import { sunTimes } from './solar.js';
 
 const CACHE_PATH = join(DATA_DIR, 'weather-cache.json');
-const FRESH_MS = 10 * 60 * 1000;   // consider a fetch fresh for 10 minutes
+const FRESH_MS = 5 * 60 * 1000;    // consider a fetch fresh for 5 minutes
 const FORECAST_DAYS = 5;           // OpenWeatherMap's free forecast only spans ~5 days
 const FETCH_TIMEOUT_MS = 15000;    // hosted PaaS egress can be much slower than local
 const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; ClockDock/1.0; +family desk display)' };
@@ -50,6 +52,7 @@ export async function getWeather(cfg) {
     const fc = await fcRes.json();
 
     const daily = aggregateDaily(fc);
+    const { sunrise, sunset } = earliestSunriseLatestSunset(lat, lon, cur.sys);
     const data = {
       tempC: cur.main.temp,
       feelsC: cur.main.feels_like,
@@ -58,8 +61,8 @@ export async function getWeather(cfg) {
       isDay: (cur.weather?.[0]?.icon || '').endsWith('d'),
       highC: daily[0]?.maxC,
       lowC: daily[0]?.minC,
-      sunrise: cur.sys?.sunrise ? new Date(cur.sys.sunrise * 1000).toISOString() : undefined,
-      sunset: cur.sys?.sunset ? new Date(cur.sys.sunset * 1000).toISOString() : undefined,
+      sunrise,
+      sunset,
       daily,                             // next ~5 days for the forecast strip
       place: cfg.location.name
     };
@@ -73,6 +76,24 @@ export async function getWeather(cfg) {
     if (mem?.data) return { ...mem.data, stale: true };
     return { unavailable: true };
   }
+}
+
+// OWM's sunrise/sunset and a local NOAA-formula calc agree to within a few
+// seconds, but as two independent estimates of the same instant, taking the
+// earlier of the two sunrises and the later of the two sunsets errs toward
+// slightly longer daylight rather than picking one source arbitrarily.
+function earliestSunriseLatestSunset(lat, lon, sys) {
+  const tz = tzlookup(lat, lon);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(new Date());
+  const get = (t) => Number(parts.find((p) => p.type === t)?.value);
+  const local = sunTimes(get('year'), get('month'), get('day'), lat, lon);
+  const owmSunrise = sys?.sunrise ? new Date(sys.sunrise * 1000) : null;
+  const owmSunset = sys?.sunset ? new Date(sys.sunset * 1000) : null;
+  const sunrise = owmSunrise ? new Date(Math.min(owmSunrise, local.sunrise)) : local.sunrise;
+  const sunset = owmSunset ? new Date(Math.max(owmSunset, local.sunset)) : local.sunset;
+  return { sunrise: sunrise.toISOString(), sunset: sunset.toISOString() };
 }
 
 // Buckets the 3-hour forecast entries by the location's local calendar date,

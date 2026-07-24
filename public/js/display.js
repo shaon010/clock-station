@@ -26,7 +26,7 @@ async function init() {
   initDeviceLocation();   // async: switches to device location once permitted
   tick();
   setInterval(tick, 1000);
-  setInterval(refreshWeather, 10 * 60 * 1000);   // matches the server's 10-min cache
+  setInterval(refreshWeather, 5 * 60 * 1000);    // matches the server's 5-min cache
   setInterval(refreshPrayer, 60 * 60 * 1000);
   setupSSE();
   requestWake();
@@ -477,6 +477,7 @@ async function refreshPrayer() {
   prayer = await fetchJSON('/api/prayer-times' + locQS());
   const h = prayer.hijri;
   $('hijri').textContent = `${h.day} ${h.month} ${h.year} AH`;
+  $('hijri').classList.toggle('fallback', h.source === 'umalqura');
   renderPrayerList();
 }
 
@@ -840,7 +841,12 @@ function fmt12(hhmm) {
   let [h, m] = hhmm.split(':').map(Number); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
   return `${h}:${String(m).padStart(2, '0')} ${ap}`;
 }
-function clockOf(iso) { const d = new Date(iso); return fmt12(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`); }
+function clockOf(iso) {
+  const d = new Date(iso);
+  const hhmm = fmt12(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return hhmm.replace(/^(\d{1,2}:\d{2})/, `$1:${ss}`);
+}
 function countdown(mins) { if (mins < 0) return ''; const h = Math.floor(mins / 60), m = Math.floor(mins % 60); return h > 0 ? `${h}h ${m}m` : `${m}m`; }
 function iso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 function occursOn(ev, ds) {

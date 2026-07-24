@@ -16,6 +16,8 @@ const ZONE = 'WLY01';               // Kuala Lumpur — fixed Hijri source, unre
 const FETCH_TIMEOUT_MS = 10000;
 const RETRY_DELAY_MS = 1000;
 const REFRESH_HOUR = 21, REFRESH_MINUTE = 45, REFRESH_TZ = 'Asia/Tokyo'; // 9:45 PM JST daily
+const OUTAGE_RETRY_MS = 15 * 60 * 1000;                 // re-poll cadence while both live sources are down
+const OUTAGE_CUTOFF_HOUR = 23, OUTAGE_CUTOFF_MINUTE = 45; // stop retrying for the day at 11:45 PM JST
 const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; ClockDock/1.0; +family desk display)' };
 
 // Same month names Node's Intl islamic-umalqura calendar produces, so the
@@ -141,8 +143,8 @@ async function refresh() {
 export async function getHijriToday() {
   if (!mem) mem = await readCache();
   const { todayYmd } = malaysiaTarget();
-  if (mem && mem.targetYmd >= todayYmd) return mem.hijri;
-  return (await refresh()).hijri;
+  const m = (mem && mem.targetYmd >= todayYmd) ? mem : await refresh();
+  return { ...m.hijri, source: m.source };
 }
 
 function msUntilNextRefresh() {
@@ -158,11 +160,34 @@ function msUntilNextRefresh() {
   return target.getTime() - nowInTz.getTime();
 }
 
+function pastOutageCutoff() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: REFRESH_TZ, hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(new Date());
+  const get = (t) => Number(parts.find((p) => p.type === t)?.value);
+  const hour = get('hour'), minute = get('minute');
+  return hour > OUTAGE_CUTOFF_HOUR || (hour === OUTAGE_CUTOFF_HOUR && minute >= OUTAGE_CUTOFF_MINUTE);
+}
+
+// If both live sources were down at 9:45 PM (refresh() fell back to the
+// offline umalqura calendar), keep polling every 15 min so a transient outage
+// self-heals the same day, but give up at 11:45 PM JST rather than retrying
+// all night — the next day's 9:45 PM run picks it back up regardless.
+function scheduleOutageRetry() {
+  if (pastOutageCutoff()) return;
+  setTimeout(async () => {
+    const r = await refresh();
+    if (r.source === 'umalqura') scheduleOutageRetry();
+  }, OUTAGE_RETRY_MS);
+}
+
 // Kick off the daily 9:45 PM JST refresh. Japan doesn't observe DST, so a
 // plain 24h re-arm after each run never drifts.
 export function scheduleHijriRefresh() {
   const run = () => {
-    refresh().catch((err) => console.error('hijri: scheduled refresh failed', err));
+    refresh()
+      .then((r) => { if (r.source === 'umalqura') scheduleOutageRetry(); })
+      .catch((err) => console.error('hijri: scheduled refresh failed', err));
     setTimeout(run, 24 * 60 * 60 * 1000);
   };
   setTimeout(run, msUntilNextRefresh());

@@ -129,6 +129,7 @@ body {
 .datebar { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1.6rem; align-items: baseline; margin-top: 1.5rem; }
 .datebar .greg { font-size: min(7cqh, 4.5cqw); }
 .datebar .hijri { font-size: min(5.2cqh, 3.3cqw); color: var(--accent); font-family: var(--font-mono); }
+.datebar .hijri.fallback { color: #ff3b30; } /* live Hijri sources are down; showing the offline umalqura estimate */
 
 /* ---------- clock styles ---------- */
 /* Minimal: thin, airy numerals. */
