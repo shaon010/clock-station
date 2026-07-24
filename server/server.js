@@ -192,6 +192,15 @@ const server = createServer(async (req, res) => {
       return sendJSON(res, { ok: true });
     }
 
+    // Diagnostic trail from the display's JS (e.g. which adhan audio element/src
+    // actually played) — logged to the server's own console/stdout since that's
+    // far easier to collect from a kiosk than opening its browser devtools.
+    if (path === '/api/log' && method === 'POST') {
+      const body = await readBody(req);
+      console.log(`[display ${new Date().toISOString()}] ${body.msg}`);
+      return sendJSON(res, { ok: true });
+    }
+
     // Force the display(s) to reload — handy after a code update, or if a
     // display is stuck, without walking over to it.
     if (path === '/api/reload' && method === 'POST') {

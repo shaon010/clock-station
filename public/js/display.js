@@ -36,8 +36,13 @@ async function init() {
   $('sound-arm').addEventListener('click', armSound);
   document.body.addEventListener('click', () => { if (!soundArmed) armSound(); }, { once: true });
   // "Now playing" overlay closes itself when the adhan finishes, or on tap.
+  // Also release the element's buffer once done: leaving a just-played file
+  // fully decoded/buffered but idle for hours (until the next prayer) gives a
+  // constrained kiosk media pipeline more chances for cross-talk between two
+  // simultaneously-loaded elements than releasing it and letting ensureAdhanReady
+  // (or the next playAdhan's preloadInto) reload it fresh when actually needed.
   for (const id of ['audio-adhan', 'audio-adhan-fajr']) {
-    $(id).addEventListener('ended', () => { activeAdhanEl = null; hideAdhanOverlay(); });
+    $(id).addEventListener('ended', () => { activeAdhanEl = null; hideAdhanOverlay(); releaseAudioEl($(id)); });
   }
   $('adhan-stop').addEventListener('click', stopAdhan);
   setupFullscreenToggle();
@@ -537,6 +542,15 @@ function preloadInto(el, src) {
   el.load();
 }
 
+// Drop a finished element back to HAVE_NOTHING so it isn't sitting fully
+// buffered/decoded and idle for hours between uses (see the `ended` listener
+// in init() for why). Whoever needs it next (playAdhan's preloadInto, or
+// ensureAdhanReady's prewarm) reloads it from scratch on its own.
+function releaseAudioEl(el) {
+  el.removeAttribute('src');
+  el.load();
+}
+
 // Warm the real playback elements for today's adhan/iqamah files ahead of
 // time, so the actual play() at prayer time hits already-buffered audio
 // instead of racing a fresh network fetch (which is when a slow/flaky
@@ -624,7 +638,17 @@ function playAdhan(isFajr, onPlaying, label, onSettled) {
   const src = isFajr ? `/audio/${muezzin}-fajr.mp3` : `/audio/${muezzin}.mp3`;
   preloadInto(el, src);
   el.volume = cfg.adhan?.volume ?? 0.85;
-  const started = () => { activeAdhanEl = el; showAdhanOverlay(name); if (onPlaying) onPlaying(); };
+  const started = () => {
+    activeAdhanEl = el;
+    // Forensic trail for the "wrong sound played" class of bug — sent to the
+    // server's console/stdout (see serverLog) instead of the browser devtools,
+    // which is impractical to check on a kiosk. If the label ever disagrees
+    // with el.currentSrc/id again, this pins down whether it's this JS picking
+    // the wrong element/src or something below it (decoder/hardware).
+    serverLog(`playing "${name}" on #${el.id} <- ${el.currentSrc}`);
+    showAdhanOverlay(name);
+    if (onPlaying) onPlaying();
+  };
   play(el, started, () => { // if fajr file 404s, fall back to the regular adhan
     if (isFajr) { preloadInto(el, `/audio/${muezzin}.mp3`); play(el, started, onSettled); }
     else if (onSettled) onSettled();
@@ -665,6 +689,7 @@ function stopAdhan() {
   el.currentTime = 0;
   activeAdhanEl = null;
   hideAdhanOverlay();
+  releaseAudioEl(el);
 }
 
 // ---------- weather ----------
@@ -833,6 +858,12 @@ async function requestWake() {
 }
 
 // ---------- helpers ----------
+// Fire-and-forget diagnostic line to the server's console/stdout — see the
+// /api/log handler in server.js. Never awaited/blocking; failures are silent
+// since this must never itself interfere with adhan playback.
+function serverLog(msg) {
+  fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ msg }) }).catch(() => {});
+}
 async function fetchJSON(url) { try { const r = await fetch(url); return await r.json(); } catch { return null; } }
 function toMin(hhmm) { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; }
 function fmt12(hhmm) {
