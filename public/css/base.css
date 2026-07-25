@@ -21,6 +21,10 @@ body {
   -webkit-font-smoothing: antialiased;
   transition: background-color 1.5s ease;
 }
+/* Device battery under 20% — flag it with a red backdrop. Only overrides
+   background-color (not the "background" shorthand) so --bg-glow keeps
+   painting on top and no other layout shifts. */
+body.low-battery { background-color: #ff3b30; }
 
 /* ---------- animated sky (weather + day/night) ---------- */
 /* Two full-screen canvases painted by sky.js. #sky sits behind the dock (the
@@ -509,13 +513,32 @@ body {
 #adhan-overlay.show { display: flex; }
 #adhan-overlay .adhan-now {
   font-family: var(--font-display); font-weight: var(--display-weight);
-  font-size: clamp(1.8rem, 5vw, 3rem); color: var(--accent);
+  font-size: clamp(2.4rem, 7vw, 4rem); color: var(--accent);
 }
 #adhan-overlay .adhan-stop-btn {
   border: 2px solid var(--accent); color: var(--accent); background: transparent;
-  border-radius: 999px; padding: 1.1rem 2.6rem; font-size: 1.3rem; font-weight: 600;
+  border-radius: 999px; padding: 1.1rem 2.6rem; font-size: 1.7rem; font-weight: 600;
   cursor: pointer; font-family: var(--font-body);
 }
 #adhan-overlay .adhan-stop-btn:hover { background: var(--accent); color: var(--bg); }
+
+/* ---------- low battery overlay (<10%) ---------- */
+/* Same "hover" pattern as #adhan-overlay: full-screen dark backdrop, centered
+   warning. Sits below #adhan-overlay's z-index so an in-progress adhan still
+   takes visual priority if both conditions land at once. Tap anywhere (whole
+   overlay is the dismiss target, like #sound-arm) to hide until the level
+   recovers above 10% and dips again. */
+#battery-overlay {
+  position: fixed; inset: 0; z-index: 85; display: none;
+  align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); color: var(--text);
+  text-align: center; cursor: pointer;
+}
+#battery-overlay.show { display: flex; }
+#battery-overlay .battery-warn {
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-size: clamp(2.4rem, 7vw, 4rem); color: #ff3b30;
+}
+#battery-overlay .battery-warn-sub { font-size: 1.7rem; color: var(--text-dim); }
 
 /* focus theme hides the busier cards to stay glanceable — handled in themes.css */

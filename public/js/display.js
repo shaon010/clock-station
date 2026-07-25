@@ -41,6 +41,7 @@ async function init() {
   }
   $('adhan-stop').addEventListener('click', stopAdhan);
   setupFullscreenToggle();
+  setupBattery();
 }
 
 // ---------- fullscreen toggle ----------
@@ -683,6 +684,36 @@ function stopAdhan() {
   el.currentTime = 0;
   activeAdhanEl = null;
   hideAdhanOverlay();
+}
+
+// ---------- battery ----------
+// Battery Status API (Chromium only — navigator.getBattery is undefined on
+// Firefox/Safari, so this is a no-op there). Below 20% the body gets a red
+// backdrop; below 10% a full-screen warning (styled like #adhan-overlay)
+// shows until tapped away, and re-arms only after the level recovers above
+// 10% and dips again.
+let batteryWarnDismissed = false;
+function setupBattery() {
+  if (!navigator.getBattery) return;
+  $('battery-overlay').addEventListener('click', () => {
+    batteryWarnDismissed = true;
+    $('battery-overlay').classList.remove('show');
+  });
+  navigator.getBattery().then((battery) => {
+    const update = () => updateBattery(battery);
+    battery.addEventListener('levelchange', update);
+    update();
+  }).catch(() => {});
+}
+function updateBattery(battery) {
+  const level = battery.level;
+  document.body.classList.toggle('low-battery', level < 0.2);
+  if (level < 0.1) {
+    if (!batteryWarnDismissed) $('battery-overlay').classList.add('show');
+  } else {
+    batteryWarnDismissed = false;
+    $('battery-overlay').classList.remove('show');
+  }
 }
 
 // ---------- weather ----------
