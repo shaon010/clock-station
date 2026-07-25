@@ -1,6 +1,23 @@
 # Running Clock Dock on the Windows tablet
 
-## One-time setup
+## If Clock Dock is hosted on Render (no local server)
+
+If the app is deployed on Render (see `render.yaml`) and the tablet just opens
+the live URL in a browser, skip straight to kiosk mode — no Node install or
+`npm install` needed on the tablet:
+
+1. Edit `scripts\start-kiosk-render.bat` and set `URL` to your Render URL
+   (e.g. `https://clock-dock.onrender.com/`).
+2. Double-click it (or put a shortcut in the Startup folder, see below) to
+   open the display full-screen in kiosk mode.
+
+This matters because the on-screen fullscreen (⛶) button uses the browser's
+Fullscreen API, which always exits on a real page reload — including the
+"Reload display" button in Settings. Kiosk mode isn't tied to that API, so
+it survives reloads. The rest of this doc (screen/time settings, autostart)
+still applies; skip the "install Node" and local-server steps.
+
+## One-time setup (running the server locally instead of on Render)
 
 1. **Install Node.js** (LTS) from nodejs.org.
 2. Copy the whole `Clock Dock` folder onto the tablet.

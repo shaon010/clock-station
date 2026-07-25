@@ -38,8 +38,11 @@ npm install
 npm start
 ```
 
-Open the two URLs it prints. To run it on the tablet at boot and keep the screen
-on, see `scripts/WINDOWS-SETUP.md`.
+Open the two URLs it prints. To run it at boot in full-screen kiosk mode (so
+it stays full-screen even after a remote reload — the in-page fullscreen
+button can't survive a page reload, that's a browser restriction) and keep
+the screen on, see `scripts/MAC-SETUP.md` (Mac) or `scripts/WINDOWS-SETUP.md`
+(Windows/tablet).
 
 On Render (or any host), set `OPENWEATHER_API_KEY` in the service's environment
 variables — without it the weather card falls back to "unavailable".
@@ -68,7 +71,7 @@ file, which is all local/self-hosted (non-Render) use needs.
 server/   config.js · prayer.js · weather.js · server.js
 public/   display.html · settings.html · css/ · js/ · audio/
 data/     config.json (auto) · hadith.json (+ how-to README)
-scripts/  start.bat · WINDOWS-SETUP.md
+scripts/  start.bat · WINDOWS-SETUP.md · start-mac.sh · MAC-SETUP.md
 ```
 
 ## Before you rely on the hadith
