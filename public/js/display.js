@@ -40,25 +40,7 @@ async function init() {
     $(id).addEventListener('ended', () => { activeAdhanEl = null; hideAdhanOverlay(); });
   }
   $('adhan-stop').addEventListener('click', stopAdhan);
-  setupFullscreenToggle();
   setupBattery();
-}
-
-// ---------- fullscreen toggle ----------
-function setupFullscreenToggle() {
-  const btn = $('fullscreen-btn');
-  const icon = $('fullscreen-icon');
-  if (!btn) return;
-  if (!document.documentElement.requestFullscreen) { btn.hidden = true; return; }
-  btn.addEventListener('click', () => {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else document.documentElement.requestFullscreen().catch(() => {});
-  });
-  document.addEventListener('fullscreenchange', () => {
-    const isFullscreen = !!document.fullscreenElement;
-    btn.title = isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen';
-    if (icon) icon.textContent = isFullscreen ? '✕' : '⛶';
-  });
 }
 
 // ---------- fit to screen ----------
