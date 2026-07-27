@@ -17,7 +17,7 @@ REM  Put a shortcut to this file in the Startup folder to run it at login:
 REM    Win+R  ->  shell:startup   ->  paste a shortcut to start-kiosk-render.bat
 REM ---------------------------------------------------------------------------
 
-set URL=https://clock-dock.onrender.com/
+set URL=https://clock-station.onrender.com/
 
 where msedge >nul 2>nul
 if %errorlevel%==0 (

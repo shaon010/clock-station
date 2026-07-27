@@ -6,10 +6,9 @@ If the app is deployed on Render (see `render.yaml`) and the tablet just opens
 the live URL in a browser, skip straight to kiosk mode — no Node install or
 `npm install` needed on the tablet:
 
-1. Edit `scripts\start-kiosk-render.bat` and set `URL` to your Render URL
-   (e.g. `https://clock-dock.onrender.com/`).
-2. Double-click it (or put a shortcut in the Startup folder, see below) to
-   open the display full-screen in kiosk mode.
+1. Double-click `scripts\start-kiosk-render.bat` (or put a shortcut in the
+   Startup folder, see below) to open the display full-screen in kiosk mode.
+   It's already pointed at `https://clock-station.onrender.com/`.
 
 This matters because the on-screen fullscreen (⛶) button uses the browser's
 Fullscreen API, which always exits on a real page reload — including the
