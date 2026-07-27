@@ -22,6 +22,32 @@ async function boot() {
   wireVoicePickers();
   wireBackup();
   wireDisplayControl();
+  wireSectionNav();
+}
+
+// ---------- section nav (sidebar / tab strip) ----------
+// Admin-panel style: only the selected section is shown at a time, instead of
+// one long stacked scroll — the sidebar picks which card is visible.
+const NAV_STORAGE_KEY = 'clock-dock-settings-tab';
+function wireSectionNav() {
+  const nav = $('#secnav');
+  if (!nav) return;
+  const items = [...nav.querySelectorAll('.nav-item')];
+  const sections = items.map((b) => document.getElementById(b.dataset.target)).filter(Boolean);
+  if (!sections.length) return;
+  const show = (id) => {
+    for (const s of sections) s.classList.toggle('active', s.id === id);
+    for (const b of items) b.classList.toggle('active', b.dataset.target === id);
+    try { localStorage.setItem(NAV_STORAGE_KEY, id); } catch {}
+    // On the phone-width horizontal strip the active pill can be scrolled out
+    // of sight (9 sections don't fit on one screen) — keep it visible without
+    // disturbing the page's own scroll position.
+    nav.querySelector('.nav-item.active')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  };
+  items.forEach((b) => b.addEventListener('click', () => show(b.dataset.target)));
+  let saved;
+  try { saved = localStorage.getItem(NAV_STORAGE_KEY); } catch {}
+  show(sections.some((s) => s.id === saved) ? saved : sections[0].id);
 }
 
 // ---------- generic data-path fields ----------
