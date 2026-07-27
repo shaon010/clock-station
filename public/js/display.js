@@ -22,6 +22,7 @@ async function init() {
   window.Sky?.init($('sky'), $('sky-fx'));   // animated weather/day-night background + foreground fx
   await refreshConfig();
   preloadAdhanAudio();
+  primeSpeechVoices();
   await Promise.all([refreshPrayer(), refreshWeather(), refreshHadith(), loadNetInfo()]);
   initDeviceLocation();   // async: switches to device location once permitted
   tick();
@@ -190,7 +191,10 @@ function tick() {
   updateNextPrayer(now);
   checkAdhan(now);
   updateBanner(now);
-  if (now.getSeconds() === 0) applyDimming(); // re-evaluate night dim each minute
+  if (now.getSeconds() === 0) {
+    applyDimming(); // re-evaluate night dim each minute
+    if (now.getMinutes() === 0) announceTime(now);
+  }
 }
 
 // Split the current time into the digits string ("12:45:09") and meridiem ("PM"/"").
@@ -668,6 +672,119 @@ function stopAdhan() {
   hideAdhanOverlay();
 }
 
+// ---------- hourly time announcement (speech) ----------
+// Speaks the current time on the hour via the browser's SpeechSynthesis API —
+// there's no fixed set of clips to record (every hour:minute combination is
+// possible), so this is TTS rather than an audio file like the adhan.
+// Bangla pronunciation quality depends on whatever bn-* voice (if any) the
+// display device/browser has installed; there's no bundled fallback for that.
+let allVoices = [];   // every voice this browser reports, for name-based lookup
+let bnVoice = null, enVoice = null;   // "auto" pick — first bn-*/en-* voice found
+let announcedHourKey = null;   // guards against re-firing within the same hour
+let lastReportedVoiceKey = null;   // dedupes /api/voices reports across repeated voiceschanged firings
+
+function primeSpeechVoices() {
+  if (!('speechSynthesis' in window)) return;
+  const load = () => {
+    const voices = speechSynthesis.getVoices();
+    if (!voices.length) return;
+    allVoices = voices;
+    bnVoice = voices.find((v) => /^bn/i.test(v.lang)) || null;
+    enVoice = voices.find((v) => /^en/i.test(v.lang)) || null;
+    reportVoices(voices);
+  };
+  load();
+  speechSynthesis.addEventListener('voiceschanged', load);
+}
+
+// Voices only exist in the display's own browser — Settings runs on a phone
+// and can't call speechSynthesis.getVoices() itself, so the display reports
+// its list to the server for Settings to read back and populate the voice
+// picker. Fire-and-forget, deduped so it doesn't repost on every stray
+// voiceschanged firing (some browsers fire it more than once for the same list).
+function reportVoices(voices) {
+  const list = voices.map((v) => ({ name: v.name, lang: v.lang }));
+  const key = list.map((v) => v.name + '|' + v.lang).join(',');
+  if (key === lastReportedVoiceKey) return;
+  lastReportedVoiceKey = key;
+  fetch('/api/voices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voices: list }) }).catch(() => {});
+}
+
+// Prefer the explicitly-chosen voice (by name, from Settings); fall back to
+// the "auto" first-match pick when unset or the named voice no longer exists
+// (e.g. Settings was configured against a different display's voice list).
+function resolveVoice(lang) {
+  const chosenName = lang === 'en' ? cfg?.announce?.enVoiceName : cfg?.announce?.bnVoiceName;
+  if (chosenName) {
+    const v = allVoices.find((v) => v.name === chosenName);
+    if (v) return v;
+  }
+  return lang === 'en' ? enVoice : bnVoice;
+}
+
+// Bangla number words 0-59 — covers both the 12-hour hour and the 0-59
+// minute, so time is spoken as words rather than read digit-by-digit (which
+// not every TTS voice normalizes correctly, e.g. "১০" read as "one zero").
+const BN_NUM = ['শূন্য', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়', 'দশ',
+  'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ', 'বিশ',
+  'একুশ', 'বাইশ', 'তেইশ', 'চব্বিশ', 'পঁচিশ', 'ছাব্বিশ', 'সাতাশ', 'আটাশ', 'উনত্রিশ', 'ত্রিশ',
+  'একত্রিশ', 'বত্রিশ', 'তেত্রিশ', 'চৌত্রিশ', 'পঁয়ত্রিশ', 'ছত্রিশ', 'সাঁইত্রিশ', 'আটত্রিশ', 'উনচল্লিশ', 'চল্লিশ',
+  'একচল্লিশ', 'বিয়াল্লিশ', 'তেতাল্লিশ', 'চুয়াল্লিশ', 'পঁয়তাল্লিশ', 'ছেচল্লিশ', 'সাতচল্লিশ', 'আটচল্লিশ', 'উনপঞ্চাশ', 'পঞ্চাশ',
+  'একান্ন', 'বায়ান্ন', 'তিপ্পান্ন', 'চুয়ান্ন', 'পঞ্চান্ন', 'ছাপ্পান্ন', 'সাতান্ন', 'আটান্ন', 'ঊনষাট'];
+
+// Bangla time-of-day word, matching everyday usage (e.g. "বেলা ১টা" for 1pm,
+// "সন্ধ্যা ৭টা" for 7pm) rather than the more formal দুপুর/রাত্রি split.
+function bnPeriod(h24) {
+  if (h24 >= 4 && h24 < 6) return 'ভোর';
+  if (h24 >= 6 && h24 < 12) return 'সকাল';
+  if (h24 >= 12 && h24 < 16) return 'বেলা';
+  if (h24 >= 16 && h24 < 18) return 'বিকাল';
+  if (h24 >= 18 && h24 < 20) return 'সন্ধ্যা';
+  return 'রাত';   // 8pm–4am
+}
+
+function bnTimePhrase(now) {
+  const h24 = now.getHours(), m = now.getMinutes(), h12 = h24 % 12 || 12;
+  const period = bnPeriod(h24), hourWord = BN_NUM[h12];
+  return m === 0
+    ? `এখন সময় ${period} ${hourWord} টা`
+    : `এখন সময় ${period} ${hourWord} টা বেজে ${BN_NUM[m]} মিনিট`;
+}
+
+function enTimePhrase(now) {
+  const h24 = now.getHours(), m = now.getMinutes(), h12 = h24 % 12 || 12;
+  const ap = h24 >= 12 ? 'PM' : 'AM';
+  return m === 0 ? `It is now ${h12} o'clock ${ap}` : `It is now ${h12}:${String(m).padStart(2, '0')} ${ap}`;
+}
+
+function speakTime(now, langOverride) {
+  if (!('speechSynthesis' in window)) return;
+  let lang = langOverride || (cfg?.announce?.language === 'en' ? 'en' : 'bn');
+  let voice = resolveVoice(lang);
+  // No Bangla voice on this device: speaking the Bangla text anyway would get
+  // read through whatever default voice exists (usually English), garbling it
+  // rather than actually saying anything intelligible — say the English
+  // phrase instead of noise.
+  if (lang === 'bn' && !voice) { lang = 'en'; voice = resolveVoice('en'); }
+  const text = lang === 'en' ? enTimePhrase(now) : bnTimePhrase(now);
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang === 'en' ? 'en-US' : 'bn-BD';
+  utter.voice = voice;
+  utter.volume = cfg?.announce?.volume ?? 1;
+  speechSynthesis.cancel();   // clear anything stuck in the queue before speaking
+  speechSynthesis.speak(utter);
+}
+
+function announceTime(now) {
+  if (!cfg?.announce?.enabled) return;
+  if (activeAdhanEl) return;   // don't talk over the adhan
+  if (inQuiet(now)) return;    // respect the same quiet hours as the adhan
+  const key = `${now.toDateString()}T${now.getHours()}`;
+  if (announcedHourKey === key) return;
+  announcedHourKey = key;
+  speakTime(now);
+}
+
 // ---------- battery ----------
 // Battery Status API (Chromium only — navigator.getBattery is undefined on
 // Firefox/Safari, so this is a no-op there). Below 20% the body gets a red
@@ -853,6 +970,7 @@ function setupSSE() {
   es.addEventListener('test-adhan', (e) => {
     try { const d = JSON.parse(e.data || '{}'); playAdhan(d.which === 'fajr'); } catch { playAdhan(false); }
   });
+  es.addEventListener('test-announce', () => speakTime(new Date()));
   es.addEventListener('reload', () => location.reload());
   es.onerror = () => {}; // EventSource auto-reconnects (retry hint sent by server)
 }

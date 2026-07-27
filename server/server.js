@@ -41,6 +41,14 @@ const MIME = {
 
 // ---- SSE hub -------------------------------------------------------------
 const clients = new Set();
+
+// Speech-synthesis voices are only known to the browser that actually plays
+// them (the display device), not the server or the phone loading Settings —
+// so the display reports its voice list here after it loads, and Settings
+// reads it back to populate the voice picker. In-memory only: it's live
+// device state, not a saved preference, and naturally refreshes whenever the
+// display (re)loads.
+let lastVoices = [];
 function broadcast(event, data = {}) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const res of clients) { try { res.write(payload); } catch {} }
@@ -198,6 +206,24 @@ const server = createServer(async (req, res) => {
     if (path === '/api/log' && method === 'POST') {
       const body = await readBody(req);
       console.log(`[display ${new Date().toISOString()}] ${body.msg}`);
+      return sendJSON(res, { ok: true });
+    }
+
+    // Voices available for the hourly announcement — reported by the display
+    // (see primeSpeechVoices in display.js), read back by Settings.
+    if (path === '/api/voices' && method === 'GET') {
+      return sendJSON(res, { voices: lastVoices });
+    }
+    if (path === '/api/voices' && method === 'POST') {
+      const body = await readBody(req);
+      if (Array.isArray(body.voices)) lastVoices = body.voices;
+      return sendJSON(res, { ok: true });
+    }
+
+    // Fire a test hourly-time announcement on the display(s) — same pattern as
+    // test-adhan: speech has to come out of the display device, so push it over SSE.
+    if (path === '/api/test-announce' && method === 'POST') {
+      broadcast('test-announce');
       return sendJSON(res, { ok: true });
     }
 

@@ -72,6 +72,14 @@ export const DEFAULT_CONFIG = {
     }
   },
 
+  announce: {
+    enabled: true,                         // speak the time at the top of every hour
+    language: 'bn',                        // bn | en
+    volume: 1,
+    bnVoiceName: '',                       // '' = auto (first bn-* voice the display reports)
+    enVoiceName: ''                        // '' = auto (first en-* voice the display reports)
+  },
+
   dimming: {
     level: 0,                              // 0 (bright) – 0.8 (dark) manual overlay
     autoNight: { enabled: true, start: '23:00', end: '07:00', level: 1 } // 1 = screen goes fully black

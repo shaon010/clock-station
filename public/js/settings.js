@@ -17,6 +17,9 @@ async function boot() {
   wireLocationSearch();
   wireCalendar();
   wireAdhanTests();
+  wireAnnounceTest();
+  await populateVoices();
+  wireVoicePickers();
   wireBackup();
   wireDisplayControl();
 }
@@ -148,6 +151,40 @@ function renderEvents() {
 function wireAdhanTests() {
   $('#test-adhan').onclick = () => { postJSON('/api/test-adhan', { which: 'regular' }); toast('Playing on display…'); };
   $('#test-fajr').onclick = () => { postJSON('/api/test-adhan', { which: 'fajr' }); toast('Playing Fajr on display…'); };
+}
+
+// ---------- hourly announcement test ----------
+function wireAnnounceTest() {
+  $('#test-announce').onclick = () => { postJSON('/api/test-announce', {}); toast('Speaking on display…'); };
+}
+
+// ---------- voice pickers ----------
+// Voices only exist in the display's own browser (see reportVoices in
+// display.js) — this page just reads back whatever it last reported.
+async function populateVoices() {
+  const { voices } = await getJSON('/api/voices') || { voices: [] };
+  fillVoiceSelect('#voice-bn', voices.filter((v) => /^bn/i.test(v.lang)), cfg.announce?.bnVoiceName);
+  fillVoiceSelect('#voice-en', voices.filter((v) => /^en/i.test(v.lang)), cfg.announce?.enVoiceName);
+  $('#voice-note').textContent = voices.length
+    ? `${voices.length} voice(s) reported by the display.`
+    : 'No voices reported yet — open/reload the display once, then tap Refresh.';
+}
+function fillVoiceSelect(sel, voices, current) {
+  const el = $(sel);
+  el.innerHTML = '<option value="">Auto (first available)</option>'
+    + voices.map((v) => `<option value="${esc(v.name)}">${esc(v.name)} (${esc(v.lang)})</option>`).join('');
+  el.value = current && voices.some((v) => v.name === current) ? current : '';
+}
+function wireVoicePickers() {
+  $('#voice-bn').addEventListener('change', async (e) => {
+    await patch({ announce: { ...cfg.announce, bnVoiceName: e.target.value } });
+    cfg.announce.bnVoiceName = e.target.value;
+  });
+  $('#voice-en').addEventListener('change', async (e) => {
+    await patch({ announce: { ...cfg.announce, enVoiceName: e.target.value } });
+    cfg.announce.enVoiceName = e.target.value;
+  });
+  $('#refresh-voices').onclick = async () => { await populateVoices(); toast('Voice list refreshed'); };
 }
 
 // ---------- display control ----------

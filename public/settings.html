@@ -187,6 +187,22 @@
     <div class="muted" id="audio-note" style="margin-top:0.6rem"></div>
   </div>
 
+  <!-- HOURLY ANNOUNCEMENT -->
+  <div class="card">
+    <h2>Hourly time announcement</h2>
+    <div class="row"><label>Speak the time every hour</label><input type="checkbox" data-path="announce.enabled" data-type="bool"></div>
+    <div class="row"><label>Language</label>
+      <select data-path="announce.language"><option value="bn">Bangla</option><option value="en">English</option></select></div>
+    <div class="row"><label>Bangla voice</label><select id="voice-bn"></select></div>
+    <div class="row"><label>English voice</label><select id="voice-en"></select></div>
+    <div class="row"><label>Volume</label><input type="range" min="0" max="1" step="0.05" data-path="announce.volume" data-type="number"></div>
+    <div class="inline" style="margin-top:0.6rem">
+      <button class="btn ghost" id="test-announce">▶ Test on display</button>
+      <button class="btn ghost" id="refresh-voices">↻ Refresh voice list</button>
+    </div>
+    <div class="muted" id="voice-note" style="margin-top:0.6rem">Voices come from the display device's own browser — open/reload the display once so it can report what's installed.</div>
+  </div>
+
   <!-- CALENDAR -->
   <div class="card">
     <h2>Family &amp; calendar</h2>
