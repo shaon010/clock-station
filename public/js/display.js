@@ -169,6 +169,7 @@ async function refreshConfig() {
   document.documentElement.dataset.clockStyle = cfg.clockStyle || 'standard';
   document.documentElement.dataset.clockColor = cfg.clockColor || 'default';
   document.documentElement.dataset.clockFont = cfg.clockFont || 'monoton';
+  document.documentElement.dataset.widgetPalette = cfg.widgetPalette || 'candy';
   document.documentElement.style.fontSize = (16 * (cfg.fontScale || 1)) + 'px';
   if (cfg.location?.auto === false) deviceLoc = null;   // manual location wins over any stale GPS fix
   $('hadith-card').style.display = cfg.hadith?.show === false ? 'none' : '';

@@ -208,6 +208,85 @@
   --display-weight: 500;
 }
 
+/* ---- Colorful (bento): every widget is its own vivid tile, like the iOS
+   Widgets app icon (a big green pill, a coral tile, small yellow/cyan/black/
+   purple tiles) — instead of every card sharing one theme-wide accent, each
+   .hero/.wx-hero/.prayer-card/.calendar-card/.hadith-card gets its own
+   --surface/--text/--accent below, keyed by [data-widget-palette]. CSS
+   variables cascade per subtree, so overriding them on a card selector
+   re-colors everything inside that card (arcs, countdowns, active tiles,
+   hijri date, etc — all already read var(--accent) etc) without touching
+   sibling cards. --card-blur: none because these are flat solid tiles, not
+   frosted glass. Root-level values here are only for page chrome (topbar/
+   footer), which sits on the bare page background, not inside any card.
+   --bg-glow is deliberately neutral (unlike every other dark theme, which
+   tints its glow to its one accent) since five different tile hues are on
+   screen at once and a colored glow would clash with whichever ones don't
+   share it — the animated sky still shows through the gaps between tiles,
+   same as it does behind Daylight/Paper/Cyan's opaque cards today. */
+:root[data-theme="colorful"] {
+  --bg: #14151a;
+  --bg-glow: radial-gradient(ellipse at 50% -10%, rgba(255,255,255,0.05), transparent 55%);
+  --surface: rgba(255,255,255,0.06);
+  --surface-2: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.08);
+  --track: rgba(255,255,255,0.12);
+  --text: #e8edf2;
+  --text-dim: #8b95a6;
+  --accent: #9B7DE8;
+  --accent-soft: rgba(155,125,232,0.14);
+  --accent-border: rgba(155,125,232,0.35);
+  --warn: #d99a5b;
+  --card-blur: none;
+}
+/* Shared ink text: every tile in every palette below is a light/vivid hue
+   (no fixed "black anchor" tile — earlier draft kept hadith black across
+   3 of the 4 palettes, so switching palettes barely changed it), so they
+   all pair with the same near-black ink for contrast. `color` is set
+   explicitly here (not just the --text variable) because several elements
+   — .greg, .np-name, ptile .ptime, .wx-temp, day-chip .dnum, .agenda-title —
+   never write `color: var(--text)` themselves; they just inherit the
+   computed `color` from body. Without this, that inherited value stays
+   baked to body's own --text (light) and never picks up a card's
+   overridden --text, even though the variable itself is correctly
+   overridden. */
+:root[data-theme="colorful"] .hero,
+:root[data-theme="colorful"] .wx-hero,
+:root[data-theme="colorful"] .prayer-card,
+:root[data-theme="colorful"] .calendar-card,
+:root[data-theme="colorful"] .hadith-card {
+  --text: #15171c; --text-dim: rgba(21,23,28,0.62); color: var(--text);
+  --border: rgba(0,0,0,0.10); --track: rgba(0,0,0,0.14);
+}
+
+/* Candy (default) — matches the reference icon's 5 hues: green / coral / cyan / purple / yellow */
+:root[data-theme="colorful"][data-widget-palette="candy"] .hero          { --surface: #30D983; --accent: #0B5C41; --accent-soft: rgba(11,92,65,0.14); --accent-border: rgba(11,92,65,0.32); }
+:root[data-theme="colorful"][data-widget-palette="candy"] .wx-hero       { --surface: #FF6A64; --accent: #7A1F1B; --accent-soft: rgba(122,31,27,0.14); --accent-border: rgba(122,31,27,0.32); }
+:root[data-theme="colorful"][data-widget-palette="candy"] .prayer-card  { --surface: #33C6FF; --accent: #0B4A66; --accent-soft: rgba(11,74,102,0.14); --accent-border: rgba(11,74,102,0.32); }
+:root[data-theme="colorful"][data-widget-palette="candy"] .calendar-card{ --surface: #9B7DE8; --accent: #3B2A73; --accent-soft: rgba(59,42,115,0.14); --accent-border: rgba(59,42,115,0.32); }
+:root[data-theme="colorful"][data-widget-palette="candy"] .hadith-card  { --surface: #FFCC4D; --accent: #7A5A0C; --accent-soft: rgba(122,90,12,0.14); --accent-border: rgba(122,90,12,0.32); }
+
+/* Sunset — warm variant: orange / pink / amber / purple / crimson */
+:root[data-theme="colorful"][data-widget-palette="sunset"] .hero          { --surface: #FF8A5B; --accent: #7A2E10; --accent-soft: rgba(122,46,16,0.14); --accent-border: rgba(122,46,16,0.32); }
+:root[data-theme="colorful"][data-widget-palette="sunset"] .wx-hero       { --surface: #FF6FA5; --accent: #7A1F45; --accent-soft: rgba(122,31,69,0.14); --accent-border: rgba(122,31,69,0.32); }
+:root[data-theme="colorful"][data-widget-palette="sunset"] .prayer-card  { --surface: #FFD24D; --accent: #7A5A0C; --accent-soft: rgba(122,90,12,0.14); --accent-border: rgba(122,90,12,0.32); }
+:root[data-theme="colorful"][data-widget-palette="sunset"] .calendar-card{ --surface: #B98BFF; --accent: #4A2E8C; --accent-soft: rgba(74,46,140,0.14); --accent-border: rgba(74,46,140,0.32); }
+:root[data-theme="colorful"][data-widget-palette="sunset"] .hadith-card  { --surface: #FF5C5C; --accent: #7A1614; --accent-soft: rgba(122,22,20,0.14); --accent-border: rgba(122,22,20,0.32); }
+
+/* Ocean — cool variant: teal / blue / cyan / indigo / sandy gold (a warm accent against the cool set) */
+:root[data-theme="colorful"][data-widget-palette="ocean"] .hero          { --surface: #2FD9C4; --accent: #0B5C52; --accent-soft: rgba(11,92,82,0.14); --accent-border: rgba(11,92,82,0.32); }
+:root[data-theme="colorful"][data-widget-palette="ocean"] .wx-hero       { --surface: #3B82F6; --accent: #0F2E66; --accent-soft: rgba(15,46,102,0.14); --accent-border: rgba(15,46,102,0.32); }
+:root[data-theme="colorful"][data-widget-palette="ocean"] .prayer-card  { --surface: #33C6FF; --accent: #0B4A66; --accent-soft: rgba(11,74,102,0.14); --accent-border: rgba(11,74,102,0.32); }
+:root[data-theme="colorful"][data-widget-palette="ocean"] .calendar-card{ --surface: #6C7BFF; --accent: #1F2670; --accent-soft: rgba(31,38,112,0.14); --accent-border: rgba(31,38,112,0.32); }
+:root[data-theme="colorful"][data-widget-palette="ocean"] .hadith-card  { --surface: #F2C46D; --accent: #6B4B12; --accent-soft: rgba(107,75,18,0.14); --accent-border: rgba(107,75,18,0.32); }
+
+/* Pastel — softer/desaturated for a gentler daytime look: mint / blush / sky / lilac / butter */
+:root[data-theme="colorful"][data-widget-palette="pastel"] .hero          { --surface: #8DE8B8; --accent: #1F5A3C; --accent-soft: rgba(31,90,60,0.14); --accent-border: rgba(31,90,60,0.32); }
+:root[data-theme="colorful"][data-widget-palette="pastel"] .wx-hero       { --surface: #FFB3AE; --accent: #7A2E2A; --accent-soft: rgba(122,46,42,0.14); --accent-border: rgba(122,46,42,0.32); }
+:root[data-theme="colorful"][data-widget-palette="pastel"] .prayer-card  { --surface: #9FE0FF; --accent: #0B4A66; --accent-soft: rgba(11,74,102,0.14); --accent-border: rgba(11,74,102,0.32); }
+:root[data-theme="colorful"][data-widget-palette="pastel"] .calendar-card{ --surface: #CBB8F5; --accent: #3B2A73; --accent-soft: rgba(59,42,115,0.14); --accent-border: rgba(59,42,115,0.32); }
+:root[data-theme="colorful"][data-widget-palette="pastel"] .hadith-card  { --surface: #FFE29A; --accent: #6B4B12; --accent-soft: rgba(107,75,18,0.14); --accent-border: rgba(107,75,18,0.32); }
+
 /* ---- clock color presets ---- */
 /* Applies to whichever clock style is active (neon glow, LCD segments, flip
    casing/numerals) via --clock-color. "default" deliberately defines nothing

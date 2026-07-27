@@ -70,10 +70,12 @@ function bindFields() {
       // just happened.
       setPath(cfg, path, v);
       if (path === 'clockStyle') toggleClockFontRow();
+      else if (path === 'theme') toggleWidgetPaletteRow();
     }, el.type === 'range' ? 250 : 0));
     if (el.type === 'range') el.addEventListener('input', () => updateRangeLabel(el));
   }
   toggleClockFontRow();
+  toggleWidgetPaletteRow();
 }
 
 // A bare range slider's thumb position is hard to read precisely at a
@@ -91,6 +93,13 @@ function updateRangeLabel(el) {
 function toggleClockFontRow() {
   const row = $('#row-clock-font');
   if (row) row.style.display = cfg.clockStyle === 'neon' ? '' : 'none';
+}
+
+// The widget palette picker only means anything for the colorful (bento)
+// theme — hide it otherwise, same reasoning as toggleClockFontRow above.
+function toggleWidgetPaletteRow() {
+  const row = $('#row-widget-palette');
+  if (row) row.style.display = cfg.theme === 'colorful' ? '' : 'none';
 }
 
 async function populateMethods() {
