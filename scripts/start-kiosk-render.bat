@@ -17,7 +17,7 @@ REM  Put a shortcut to this file in the Startup folder to run it at login:
 REM    Win+R  ->  shell:startup   ->  paste a shortcut to start-kiosk-render.bat
 REM ---------------------------------------------------------------------------
 
-set URL=https://clock-station.onrender.com/
+set URL=https://clock-dock.onrender.com/
 
 REM Prefer Edge (lower power draw than Chrome on Windows). Edge registers
 REM itself via the "App Paths" registry key, not the PATH env var, so

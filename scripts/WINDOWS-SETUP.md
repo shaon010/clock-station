@@ -8,7 +8,7 @@ the live URL in a browser, skip straight to kiosk mode — no Node install or
 
 1. Double-click `scripts\start-kiosk-render.bat` (or put a shortcut in the
    Startup folder, see below) to open the display full-screen in kiosk mode.
-   It's already pointed at `https://clock-station.onrender.com/`.
+   It's already pointed at `https://clock-dock.onrender.com/`.
 
 This matters because the on-screen fullscreen (⛶) button uses the browser's
 Fullscreen API, which always exits on a real page reload — including the
