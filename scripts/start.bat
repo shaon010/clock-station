@@ -17,9 +17,17 @@ REM 3) Open the display in kiosk mode.
 REM    --autoplay-policy flag lets the adhan play without a manual tap.
 set URL=http://localhost:8080/
 
-where msedge >nul 2>nul
-if %errorlevel%==0 (
-  start "" msedge --kiosk %URL% --edge-kiosk-type=fullscreen --autoplay-policy=no-user-gesture-required --no-first-run
+REM Prefer Edge (lower power draw than Chrome on Windows). Edge registers
+REM itself via the "App Paths" registry key, not the PATH env var, so
+REM `where msedge` misses it even when it's installed — check its real
+REM install locations directly instead.
+set EDGE1=%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe
+set EDGE2=%ProgramFiles%\Microsoft\Edge\Application\msedge.exe
+
+if exist "%EDGE1%" (
+  start "" "%EDGE1%" --kiosk %URL% --edge-kiosk-type=fullscreen --autoplay-policy=no-user-gesture-required --no-first-run
+) else if exist "%EDGE2%" (
+  start "" "%EDGE2%" --kiosk %URL% --edge-kiosk-type=fullscreen --autoplay-policy=no-user-gesture-required --no-first-run
 ) else (
   start "" chrome --kiosk %URL% --autoplay-policy=no-user-gesture-required --no-first-run
 )

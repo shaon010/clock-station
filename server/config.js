@@ -76,6 +76,7 @@ export const DEFAULT_CONFIG = {
     enabled: true,                         // speak the time at the top of every hour
     language: 'bn',                        // bn | en
     volume: 1,
+    rate: 0.85,                            // speech speed (1 = normal, <1 slower)
     bnVoiceName: '',                       // '' = auto (first bn-* voice the display reports)
     enVoiceName: ''                        // '' = auto (first en-* voice the display reports)
   },

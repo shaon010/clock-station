@@ -734,18 +734,36 @@ const BN_NUM = ['শূন্য', 'এক', 'দুই', 'তিন', 'চা�
 
 // Bangla time-of-day word, matching everyday usage (e.g. "বেলা ১টা" for 1pm,
 // "সন্ধ্যা ৭টা" for 7pm) rather than the more formal দুপুর/রাত্রি split.
-function bnPeriod(h24) {
-  if (h24 >= 4 && h24 < 6) return 'ভোর';
-  if (h24 >= 6 && h24 < 12) return 'সকাল';
+// বিকাল/সন্ধ্যা and ভোর/সকাল track actual dusk/dawn rather than a fixed clock
+// hour — 5pm reads as বিকাল in summer (sunset ~7pm) but সন্ধ্যা in winter
+// (sunset ~5pm) — so the boundaries shift from that day's real sunrise/
+// sunset (via prayer.timings), clamped to a sane range in case prayer times
+// haven't loaded yet or the location is at an extreme latitude.
+function bnPeriod(h24, sunriseH, sunsetH) {
+  const dawnStart = sunriseH - 1;
+  if (h24 >= dawnStart && h24 < sunriseH) return 'ভোর';
+  if (h24 >= sunriseH && h24 < 12) return 'সকাল';
   if (h24 >= 12 && h24 < 16) return 'বেলা';
-  if (h24 >= 16 && h24 < 18) return 'বিকাল';
-  if (h24 >= 18 && h24 < 20) return 'সন্ধ্যা';
-  return 'রাত';   // 8pm–4am
+  if (h24 >= 16 && h24 < sunsetH) return 'বিকাল';
+  if (h24 >= sunsetH && h24 < sunsetH + 2) return 'সন্ধ্যা';
+  return 'রাত';
+}
+
+// Today's sunrise/sunset hour, clamped to a plausible range so a missing
+// prayer-times fetch or an extreme-latitude location can't push বিকাল/সন্ধ্যা
+// or ভোর/সকাল into a nonsensical part of the day. Falls back to a fixed 6/18
+// default (used by most of Bangladesh most of the year) when prayer times
+// haven't loaded yet.
+function sunHours() {
+  const sunriseH = prayer?.timings?.Sunrise ? Math.floor(toMin(prayer.timings.Sunrise) / 60) : 6;
+  const sunsetH = prayer?.timings?.Maghrib ? Math.floor(toMin(prayer.timings.Maghrib) / 60) : 18;
+  return { sunriseH: Math.max(4, Math.min(8, sunriseH)), sunsetH: Math.max(16, Math.min(21, sunsetH)) };
 }
 
 function bnTimePhrase(now) {
   const h24 = now.getHours(), m = now.getMinutes(), h12 = h24 % 12 || 12;
-  const period = bnPeriod(h24), hourWord = BN_NUM[h12];
+  const { sunriseH, sunsetH } = sunHours();
+  const period = bnPeriod(h24, sunriseH, sunsetH), hourWord = BN_NUM[h12];
   return m === 0
     ? `এখন সময় ${period} ${hourWord} টা`
     : `এখন সময় ${period} ${hourWord} টা বেজে ${BN_NUM[m]} মিনিট`;
@@ -771,6 +789,7 @@ function speakTime(now, langOverride) {
   utter.lang = lang === 'en' ? 'en-US' : 'bn-BD';
   utter.voice = voice;
   utter.volume = cfg?.announce?.volume ?? 1;
+  utter.rate = cfg?.announce?.rate ?? 0.85;
   speechSynthesis.cancel();   // clear anything stuck in the queue before speaking
   speechSynthesis.speak(utter);
 }

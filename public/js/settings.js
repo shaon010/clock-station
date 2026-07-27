@@ -31,15 +31,33 @@ function bindFields() {
     const val = getPath(cfg, path);
     if (el.type === 'checkbox') el.checked = !!val;
     else if (val != null) el.value = val;
+    updateRangeLabel(el);
     const evt = (el.type === 'range') ? 'input' : 'change';
     el.addEventListener(evt, debounce(async () => {
       let v = el.type === 'checkbox' ? el.checked : el.value;
       if (type === 'number') v = parseFloat(v) || 0;
       await patch(buildNested(path, v));
-      if (path === 'clockStyle') { cfg.clockStyle = v; toggleClockFontRow(); }
+      // Keep the in-memory cfg in sync with what was just saved — otherwise a
+      // later handler that spreads a whole nested object (e.g. the voice
+      // pickers doing `{...cfg.announce, enVoiceName: x}`) would resend this
+      // field's stale pre-change value and silently overwrite the save that
+      // just happened.
+      setPath(cfg, path, v);
+      if (path === 'clockStyle') toggleClockFontRow();
     }, el.type === 'range' ? 250 : 0));
+    if (el.type === 'range') el.addEventListener('input', () => updateRangeLabel(el));
   }
   toggleClockFontRow();
+}
+
+// A bare range slider's thumb position is hard to read precisely at a
+// glance (e.g. 0.85 on a 0.5-1.5 track sits at 35%, not visibly far from
+// center) — sliders opted into this via data-val-for get the live number
+// printed next to them instead of leaving it to be eyeballed.
+function updateRangeLabel(el) {
+  if (el.type !== 'range') return;
+  const label = el.parentElement?.querySelector(`[data-val-for="${el.dataset.path}"]`);
+  if (label) label.textContent = parseFloat(el.value).toFixed(2);
 }
 
 // The neon font picker only means anything when the neon clock style is
@@ -217,6 +235,7 @@ async function getJSON(u) { try { return await (await fetch(u)).json(); } catch 
 async function postJSON(u, b) { return fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }); }
 function getPath(o, p) { return p.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }
 function buildNested(p, v) { const o = {}; let cur = o; const ks = p.split('.'); ks.forEach((k, i) => { if (i === ks.length - 1) cur[k] = v; else cur = cur[k] = {}; }); return o; }
+function setPath(o, p, v) { const ks = p.split('.'); let cur = o; ks.forEach((k, i) => { if (i === ks.length - 1) cur[k] = v; else cur = cur[k] ??= {}; }); }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
 let toastT;
